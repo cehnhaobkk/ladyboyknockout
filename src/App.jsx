@@ -11,6 +11,7 @@ import {
   getFighterVisualScale,
   UNIFIED_FIGHTER_HEIGHT_RATIO,
 } from './fighter/pixelScale'
+import { publicUrl } from './utils/publicUrl.js'
 
 const PLAYER = {
   id: 'nong_nut',
@@ -115,7 +116,7 @@ const GAME_OVER_POSES = {
 
 function getGameOverPose(fighterId, won) {
   const poses = GAME_OVER_POSES[fighterId]
-  if (!poses) return `/characters/${fighterId}.png`
+  if (!poses) return publicUrl(`/characters/${fighterId}.png`)
   return won ? poses.win : poses.lose
 }
 
@@ -231,7 +232,7 @@ function GameOverScreen({
           alt={winnerName}
           onError={(e) => {
             e.currentTarget.src = playerWon
-              ? playerFighter.img || `/characters/${playerFighter.id}.png`
+              ? playerFighter.img || publicUrl(`/characters/${playerFighter.id}.png`)
               : PLAYER.img
           }}
         />
@@ -254,6 +255,19 @@ const STAGES = [
   { id: 'phuket', name: 'Phuket', subtitle: 'Phuket Fight Club', img: '/stages/Phuket.png' },
   { id: 'chiangmai', name: 'Chiang Mai', subtitle: 'Lantern Festival Brawl', img: '/stages/Changmai.png' },
 ]
+
+PLAYER.img = publicUrl(PLAYER.img)
+ENEMIES.forEach((enemy) => {
+  enemy.img = publicUrl(enemy.img)
+  enemy.mobHeadshot = publicUrl(enemy.mobHeadshot)
+})
+Object.values(GAME_OVER_POSES).forEach((poses) => {
+  poses.win = publicUrl(poses.win)
+  poses.lose = publicUrl(poses.lose)
+})
+STAGES.forEach((stage) => {
+  stage.img = publicUrl(stage.img)
+})
 
 /** Stage ground anchor; lowered ~15pp so fighters sit closer to the floor */
 const STAGE_GROUND_BOTTOM = {

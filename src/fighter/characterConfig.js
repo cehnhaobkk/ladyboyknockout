@@ -1,3 +1,5 @@
+import { publicUrl } from '../utils/publicUrl.js'
+
 export const CHARACTER_POSES = {
   dave: {
     standby: '/characters/dave/1_DV_standby.png',
@@ -60,6 +62,12 @@ export const CHARACTER_POSES = {
     win: '/characters/dmitri/6_DM_win.png',
     lose: '/characters/dmitri/7_DM_lose.png',
   },
+}
+
+for (const poses of Object.values(CHARACTER_POSES)) {
+  for (const [key, path] of Object.entries(poses)) {
+    poses[key] = publicUrl(path)
+  }
 }
 
 export const DAVE_STATES = {

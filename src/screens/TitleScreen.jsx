@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import styles from './TitleScreen.module.css'
+import { publicUrl } from '../utils/publicUrl.js'
 
 const MARQUEE_TEXT =
   '⚠️ SIDE EFFECTS: BLACK EYES · BRUISED EGOS · UNEXPECTED LIFE CHOICES' +
@@ -51,7 +52,7 @@ export default function TitleScreen({ onStart }) {
         <div className={styles.logoWrap}>
           <img
             className={styles.logo}
-            src="/assets/logo.png"
+            src={publicUrl('/assets/logo.png')}
             alt="Ladyboy Knockout"
             draggable={false}
           />
