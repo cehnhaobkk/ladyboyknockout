@@ -156,8 +156,8 @@ export default function TitleScreen({ onStart }) {
               rounds.
             </p>
             <div className={styles.contactBlock}>
-              <a className={styles.contactLink} href="mailto:hi@ladyboyknockout.com">
-                hi@ladyboyknockout.com
+              <a className={styles.contactLink} href="mailto:sawadeeka@ladyboyknockout.xyz">
+                sawadeeka@ladyboyknockout.xyz
               </a>
             </div>
             <p className={styles.version}>© LBKO All rights reserved.</p>

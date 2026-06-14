@@ -7,6 +7,7 @@
   font-family: 'Press Start 2P', monospace;
   height: var(--app-height, 100dvh);
   max-height: var(--app-height, 100dvh);
+  --chrome-text-size: clamp(5px, min(1.8vw, 1.4vh), 11px);
 }
 
 .marquee {
@@ -32,7 +33,7 @@
   flex-shrink: 0;
   padding-right: 3rem;
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(6px, min(2.4vw, 1.6vh), 12px);
+  font-size: var(--chrome-text-size);
   color: #ffe500;
   white-space: nowrap;
   letter-spacing: 0.05em;
@@ -518,7 +519,7 @@
   grid-column: 2;
   margin: 0;
   text-align: center;
-  font-size: clamp(5px, min(1.8vw, 1.4vh), 11px);
+  font-size: var(--chrome-text-size);
   color: rgba(255, 255, 255, 0.42);
   letter-spacing: 0.05em;
   line-height: 1.8;
@@ -542,18 +543,20 @@
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
+  .screen {
+    --chrome-text-size: clamp(5px, 1.7vw, 8px);
+  }
+
   .marquee {
     padding-top: max(clamp(0.22rem, 0.8vh, 0.45rem), env(safe-area-inset-top, 0px));
     padding-bottom: clamp(0.22rem, 0.8vh, 0.45rem);
   }
 
   .marqueeText {
-    font-size: clamp(5px, 2vw, 8px);
     padding-right: 2rem;
   }
 
   .advisory {
-    font-size: clamp(5px, 1.7vw, 8px);
     line-height: 1.65;
     max-width: 94vw;
   }
@@ -568,6 +571,10 @@
 }
 
 @media (orientation: landscape) and (max-height: 520px) {
+  .screen {
+    --chrome-text-size: clamp(5px, min(1.2vw, 2vh), 10px);
+  }
+
   .content {
     top: 46%;
     transform: translate(-50%, -50%);
@@ -607,7 +614,6 @@
   }
 
   .advisory {
-    font-size: clamp(5px, min(1.2vw, 2vh), 10px);
     line-height: 1.55;
     letter-spacing: 0.03em;
     max-width: min(88vw, 36rem);
@@ -622,16 +628,16 @@
     padding-bottom: clamp(0.2rem, 0.7vh, 0.35rem);
   }
 
-  .marqueeText {
-    font-size: clamp(5px, min(1.8vw, 1.4vh), 9px);
-  }
-
   .aboutPanel {
     width: min(360px, 85vw);
   }
 }
 
 @media (orientation: landscape) and (max-height: 420px) {
+  .screen {
+    --chrome-text-size: clamp(5px, min(1.1vw, 1.9vh), 9px);
+  }
+
   .chrome {
     padding-bottom: max(0.8rem, calc(0.6rem + env(safe-area-inset-bottom, 0px)));
   }
@@ -653,15 +659,11 @@
 
   .aboutBtn,
   .advisory {
-    font-size: clamp(5px, min(1.1vw, 1.9vh), 9px);
+    font-size: var(--chrome-text-size);
   }
 
   .heart {
     font-size: clamp(6px, min(1.5vw, 2.2vh), 11px);
-  }
-
-  .marqueeText {
-    font-size: clamp(5px, min(1.5vw, 1.3vh), 8px);
   }
 }
 
