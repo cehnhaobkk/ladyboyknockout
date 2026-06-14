@@ -547,6 +547,17 @@
     --chrome-text-size: clamp(5px, 1.7vw, 8px);
   }
 
+  .logo {
+    width: min(446px, 73.6vw, 55.2vh);
+    max-height: min(55.2vh, 420px);
+  }
+
+  .startBtn {
+    margin-top: clamp(3.35rem, 9vh, 3.75rem);
+    font-size: clamp(0.6rem, 2.76vw, 0.83rem);
+    padding: 1.1rem 1.55rem;
+  }
+
   .marquee {
     padding-top: max(clamp(0.22rem, 0.8vh, 0.45rem), env(safe-area-inset-top, 0px));
     padding-bottom: clamp(0.22rem, 0.8vh, 0.45rem);
