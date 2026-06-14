@@ -5,6 +5,8 @@
   overflow: hidden;
   background: #000;
   font-family: 'Press Start 2P', monospace;
+  height: var(--app-height, 100dvh);
+  max-height: var(--app-height, 100dvh);
 }
 
 .marquee {
@@ -16,7 +18,8 @@
   overflow: hidden;
   background: #000;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.7rem 0;
+  padding: clamp(0.3rem, 1.1vh, 0.7rem) 0;
+  padding-top: max(clamp(0.3rem, 1.1vh, 0.7rem), env(safe-area-inset-top, 0px));
 }
 
 .marqueeTrack {
@@ -29,7 +32,7 @@
   flex-shrink: 0;
   padding-right: 3rem;
   font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
+  font-size: clamp(6px, min(2.4vw, 1.6vh), 12px);
   color: #ffe500;
   white-space: nowrap;
   letter-spacing: 0.05em;
@@ -515,7 +518,7 @@
   grid-column: 2;
   margin: 0;
   text-align: center;
-  font-size: clamp(6px, min(1.1vw, 1.6vh), 11px);
+  font-size: clamp(5px, min(1.8vw, 1.4vh), 11px);
   color: rgba(255, 255, 255, 0.42);
   letter-spacing: 0.05em;
   line-height: 1.8;
@@ -526,7 +529,7 @@
 
 .heart {
   color: #ff1b8d;
-  font-size: clamp(8px, min(1.5vw, 2.2vh), 14px);
+  font-size: clamp(7px, min(2.4vw, 1.8vh), 14px);
   display: inline-block;
   vertical-align: -1px;
   line-height: 1;
@@ -539,17 +542,28 @@
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
+  .marquee {
+    padding-top: max(clamp(0.22rem, 0.8vh, 0.45rem), env(safe-area-inset-top, 0px));
+    padding-bottom: clamp(0.22rem, 0.8vh, 0.45rem);
+  }
+
+  .marqueeText {
+    font-size: clamp(5px, 2vw, 8px);
+    padding-right: 2rem;
+  }
+
   .advisory {
-    font-size: clamp(6px, 2.4vw, 9px);
-    max-width: 92vw;
+    font-size: clamp(5px, 1.7vw, 8px);
+    line-height: 1.65;
+    max-width: 94vw;
   }
 
   .aboutBtn {
-    font-size: clamp(6px, 2.2vw, 9px);
+    font-size: clamp(5px, 1.7vw, 8px);
   }
 
   .heart {
-    font-size: clamp(8px, 3vw, 12px);
+    font-size: clamp(6px, 2.2vw, 10px);
   }
 }
 
@@ -588,27 +602,28 @@
   }
 
   .aboutBtn {
-    font-size: clamp(9px, min(1.4vw, 2.5vh), 12px);
+    font-size: clamp(7px, min(1.2vw, 2.2vh), 11px);
     line-height: 1.5;
   }
 
   .advisory {
-    font-size: clamp(9px, min(1.4vw, 2.5vh), 12px);
+    font-size: clamp(5px, min(1.2vw, 2vh), 10px);
     line-height: 1.55;
     letter-spacing: 0.03em;
     max-width: min(88vw, 36rem);
   }
 
   .heart {
-    font-size: clamp(11px, min(1.9vw, 2.8vh), 15px);
+    font-size: clamp(7px, min(1.6vw, 2.4vh), 12px);
   }
 
   .marquee {
-    padding: 0.35rem 0;
+    padding-top: max(clamp(0.2rem, 0.7vh, 0.35rem), env(safe-area-inset-top, 0px));
+    padding-bottom: clamp(0.2rem, 0.7vh, 0.35rem);
   }
 
   .marqueeText {
-    font-size: 10px;
+    font-size: clamp(5px, min(1.8vw, 1.4vh), 9px);
   }
 
   .aboutPanel {
@@ -638,11 +653,15 @@
 
   .aboutBtn,
   .advisory {
-    font-size: clamp(9px, min(1.25vw, 2.2vh), 11px);
+    font-size: clamp(5px, min(1.1vw, 1.9vh), 9px);
   }
 
   .heart {
-    font-size: clamp(10px, min(1.7vw, 2.5vh), 14px);
+    font-size: clamp(6px, min(1.5vw, 2.2vh), 11px);
+  }
+
+  .marqueeText {
+    font-size: clamp(5px, min(1.5vw, 1.3vh), 8px);
   }
 }
 

@@ -483,10 +483,12 @@ body {
   font-family: 'Press Start 2P', monospace;
   background: var(--bg);
   color: #eee;
-  min-height: 100vh;
+  min-height: var(--app-height, 100dvh);
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
-#root { min-height: 100vh; }
+#root { min-height: var(--app-height, 100dvh); }
 .scanlines {
   pointer-events: none;
   position: fixed;

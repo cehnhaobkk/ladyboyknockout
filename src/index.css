@@ -4,6 +4,26 @@
   padding: 0;
 }
 
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
+  /* One extra pixel lets iOS Safari collapse the URL bar on scroll. */
+  min-height: calc(var(--app-height, 100dvh) + 1px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  min-height: var(--app-height, 100dvh);
+}
+
 img.fighter-image {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
