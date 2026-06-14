@@ -258,6 +258,89 @@
   opacity: 1;
 }
 
+.fullscreenBtn {
+  margin-top: clamp(0.85rem, 2.5vh, 1.15rem);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.38rem, 1.7vw, 0.5rem);
+  color: rgba(255, 229, 0, 0.82);
+  background: rgba(7, 7, 15, 0.45);
+  border: 1px solid rgba(255, 229, 0, 0.45);
+  padding: 0.65rem 0.95rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  line-height: 1.55;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.fullscreenBtn:hover {
+  color: #fff176;
+  border-color: #ffe500;
+  background: rgba(20, 10, 28, 0.72);
+}
+
+.fullscreenGuide {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 62;
+  width: min(360px, 92vw);
+  transform: translate(-50%, -46%) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, #12121f 0%, #07070f 100%);
+  border: 2px solid rgba(255, 27, 141, 0.45);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.72);
+  padding: 1.35rem 1.25rem 1.5rem;
+  box-sizing: border-box;
+  transition:
+    opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fullscreenGuide.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.guideBody {
+  padding-top: 1.75rem;
+}
+
+.guideTitle {
+  font-size: clamp(0.52rem, 2.5vw, 0.68rem);
+  color: #ffe500;
+  letter-spacing: 0.05em;
+  line-height: 1.7;
+  margin-bottom: 0.9rem;
+}
+
+.guideLead,
+.guideNote {
+  font-size: clamp(0.38rem, 1.8vw, 0.48rem);
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.85;
+  letter-spacing: 0.03em;
+}
+
+.guideSteps {
+  margin: 1rem 0;
+  padding-left: 1.1rem;
+  font-size: clamp(0.38rem, 1.8vw, 0.48rem);
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.95;
+  letter-spacing: 0.03em;
+}
+
+.guideSteps strong {
+  color: #ffe500;
+  font-weight: inherit;
+}
+
+.guideNote {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 @keyframes btnPulse {
   0%,
   100% {
@@ -556,6 +639,12 @@
     margin-top: clamp(3.35rem, 9vh, 3.75rem);
     font-size: clamp(0.6rem, 2.76vw, 0.83rem);
     padding: 1.1rem 1.55rem;
+  }
+
+  .fullscreenBtn {
+    margin-top: clamp(0.75rem, 2.2vh, 1rem);
+    font-size: clamp(0.36rem, 1.65vw, 0.46rem);
+    padding: 0.58rem 0.85rem;
   }
 
   .marquee {

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import styles from './TitleScreen.module.css'
 import { publicUrl } from '../utils/publicUrl.js'
+import { isIOS, isStandaloneMode, requestAppFullscreen } from '../utils/fullscreen.js'
 
 const MARQUEE_TEXT =
   '⚠️ SIDE EFFECTS: BLACK EYES · BRUISED EGOS · UNEXPECTED LIFE CHOICES' +
@@ -23,6 +24,8 @@ const CONTROLS = [
 export default function TitleScreen({ onStart }) {
   const [loading, setLoading] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [fullscreenGuideOpen, setFullscreenGuideOpen] = useState(false)
+  const [showFullscreenBtn] = useState(() => !isStandaloneMode())
 
   const handleStart = useCallback(() => {
     if (loading) return
@@ -32,6 +35,18 @@ export default function TitleScreen({ onStart }) {
 
   const openAbout = useCallback(() => setAboutOpen(true), [])
   const closeAbout = useCallback(() => setAboutOpen(false), [])
+  const openFullscreenGuide = useCallback(() => setFullscreenGuideOpen(true), [])
+  const closeFullscreenGuide = useCallback(() => setFullscreenGuideOpen(false), [])
+
+  const handleFullscreen = useCallback(async () => {
+    if (isIOS()) {
+      openFullscreenGuide()
+      return
+    }
+
+    const entered = await requestAppFullscreen()
+    if (!entered) openFullscreenGuide()
+  }, [openFullscreenGuide])
 
   return (
     <div className={styles.screen}>
@@ -66,6 +81,12 @@ export default function TitleScreen({ onStart }) {
         >
           {loading ? '🥊 LOADING...' : 'TAP HERE TO START'}
         </button>
+
+        {showFullscreenBtn && (
+          <button type="button" className={styles.fullscreenBtn} onClick={handleFullscreen}>
+            {isIOS() ? '📲 HIDE SAFARI BAR' : '⛶ FULL SCREEN'}
+          </button>
+        )}
       </div>
 
       <div className={styles.chrome}>
@@ -77,9 +98,12 @@ export default function TitleScreen({ onStart }) {
         </p>
       </div>
       <div
-        className={`${styles.aboutOverlay} ${aboutOpen ? styles.open : ''}`}
-        onClick={closeAbout}
-        aria-hidden={!aboutOpen}
+        className={`${styles.aboutOverlay} ${aboutOpen || fullscreenGuideOpen ? styles.open : ''}`}
+        onClick={() => {
+          closeAbout()
+          closeFullscreenGuide()
+        }}
+        aria-hidden={!aboutOpen && !fullscreenGuideOpen}
       />
       <aside
         className={`${styles.aboutPanel} ${aboutOpen ? styles.open : ''}`}
@@ -162,6 +186,31 @@ export default function TitleScreen({ onStart }) {
             </div>
             <p className={styles.version}>© LBKO All rights reserved.</p>
           </section>
+        </div>
+      </aside>
+
+      <aside
+        className={`${styles.fullscreenGuide} ${fullscreenGuideOpen ? styles.open : ''}`}
+        aria-hidden={!fullscreenGuideOpen}
+        aria-label="Fullscreen instructions"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className={styles.closeBtn} onClick={closeFullscreenGuide}>
+          ✕ CLOSE
+        </button>
+
+        <div className={styles.guideBody}>
+          <h2 className={styles.guideTitle}>PLAY FULL SCREEN</h2>
+          <p className={styles.guideLead}>
+            Safari won&apos;t let websites hide the tab bar from a normal link. Add the game to your
+            home screen for a true arcade-style full screen.
+          </p>
+          <ol className={styles.guideSteps}>
+            <li>Tap the <strong>Share</strong> button in Safari (square with arrow)</li>
+            <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+            <li>Open <strong>Ladyboy Knockout</strong> from your home screen</li>
+          </ol>
+          <p className={styles.guideNote}>No browser bars. Just the fight. 👊</p>
         </div>
       </aside>
     </div>
