@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { getStateConfig, getAiTiming, usesDaveAi, usesKyleAi } from './fighter/characterConfig'
 import { preloadAllFighterAssets } from './fighter/useFighterAssets'
 import Fighter from './components/Fighter'
@@ -3716,6 +3717,7 @@ export default function App() {
           }}
         />
       )}
+      <Analytics />
     </>
   )
 }
