@@ -81,12 +81,6 @@ export default function TitleScreen({ onStart }) {
         >
           {loading ? '🥊 LOADING...' : 'TAP HERE TO START'}
         </button>
-
-        {showFullscreenBtn && (
-          <button type="button" className={styles.fullscreenBtn} onClick={handleFullscreen}>
-            {isIOS() ? '📲 HIDE SAFARI BAR' : '⛶ FULL SCREEN'}
-          </button>
-        )}
       </div>
 
       <div className={styles.chrome}>
@@ -96,6 +90,11 @@ export default function TitleScreen({ onStart }) {
         <p className={styles.advisory}>
           PG15+ — PARENTAL ADVISORY | © Made with <span className={styles.heart}>♥</span> in BKK
         </p>
+        {showFullscreenBtn && (
+          <button type="button" className={styles.fullscreenBtn} onClick={handleFullscreen}>
+            {isIOS() ? '📲 HIDE SAFARI BAR' : '⛶ FULL SCREEN'}
+          </button>
+        )}
       </div>
       <div
         className={`${styles.aboutOverlay} ${aboutOpen || fullscreenGuideOpen ? styles.open : ''}`}
