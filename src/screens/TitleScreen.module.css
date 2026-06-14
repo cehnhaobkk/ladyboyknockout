@@ -634,14 +634,14 @@
   }
 
   .logo {
-    width: min(446px, 76.8vw, 57.6vh);
-    max-height: min(57.6vh, 420px);
+    width: min(446px, 86vw, 64.5vh);
+    max-height: min(64.5vh, 420px);
   }
 
   .startBtn {
-    margin-top: clamp(3.35rem, 9vh, 3.75rem);
-    font-size: clamp(0.62rem, 2.88vw, 0.86rem);
-    padding: 1.14rem 1.62rem;
+    margin-top: clamp(4rem, 11vh, 4.5rem);
+    font-size: clamp(0.7rem, 3.2vw, 0.96rem);
+    padding: 1.28rem 1.82rem;
   }
 
   .fullscreenBtn {

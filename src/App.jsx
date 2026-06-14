@@ -1950,7 +1950,7 @@ body {
 }
 .go-pose {
   width: auto;
-  height: clamp(151px, 23.76vw, 216px);
+  height: clamp(136px, 21.4vw, 194px);
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(3px 6px 10px rgba(0, 0, 0, 0.9));
@@ -2335,6 +2335,36 @@ body.fight-active {
     padding-top: max(1.25rem, calc(1rem + env(safe-area-inset-top, 0px)));
     padding-bottom: max(1.25rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
   }
+  .gameover-content {
+    padding: 0.25rem 12px 0.35rem;
+  }
+  .go-headline {
+    font-size: 11px;
+    margin: 0 0 6px;
+    letter-spacing: 3px;
+  }
+  .go-score {
+    margin: 0 0 2px;
+  }
+  .go-score-label {
+    margin: 0 0 8px;
+  }
+  .go-message {
+    margin: 0 auto 10px;
+    font-size: 8px;
+    line-height: 1.7;
+  }
+  .go-pose {
+    height: clamp(122px, 19vw, 175px);
+    margin: 0 auto 4px;
+  }
+  .go-actions {
+    gap: 8px;
+  }
+  .go-btn {
+    padding: 8px 14px;
+    font-size: clamp(6px, 1.3vw, 9px);
+  }
 }
 @media (orientation: landscape) and (max-height: 420px) {
   .gameover-overlay {
@@ -2346,6 +2376,9 @@ body.fight-active {
   .gameover-overlay {
     padding-top: max(1.25rem, calc(0.85rem + env(safe-area-inset-top, 0px)));
     padding-bottom: max(1.25rem, calc(0.85rem + env(safe-area-inset-bottom, 0px)));
+  }
+  .go-pose {
+    height: clamp(122px, 34vw, 175px);
   }
 }
 `
