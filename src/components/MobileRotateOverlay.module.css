@@ -1,0 +1,48 @@
+.overlay {
+  display: none;
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    background: #000;
+    text-align: center;
+    padding: 1.5rem;
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .phoneEmoji {
+    font-size: 3.5rem;
+    animation: phoneRotate 2.4s ease-in-out infinite;
+  }
+
+  .rotateText {
+    font-size: 0.52rem;
+    color: #ff1b8d;
+    letter-spacing: 0.06em;
+    line-height: 1.9;
+    max-width: 16rem;
+    text-shadow: 0 0 12px rgba(255, 27, 141, 0.45);
+    margin: 0;
+  }
+}
+
+@keyframes phoneRotate {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(90deg);
+  }
+}

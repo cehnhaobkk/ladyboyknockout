@@ -1,0 +1,189 @@
+.controls {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .controls {
+    display: flex;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0.35rem max(0.5rem, env(safe-area-inset-left)) max(0.35rem, env(safe-area-inset-bottom))
+      max(0.5rem, env(safe-area-inset-right));
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+
+  .dpad,
+  .actions {
+    pointer-events: auto;
+  }
+
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 2.6rem);
+    grid-template-rows: repeat(3, 2.6rem);
+    gap: 0.2rem;
+  }
+
+  .dpadBtn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(8, 0, 16, 0.72);
+    border: 2px solid rgba(77, 249, 255, 0.55);
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -3px 0 rgba(0, 0, 0, 0.35),
+      0 2px 6px rgba(0, 0, 0, 0.45);
+  }
+
+  .dpadBtn:active {
+    background: rgba(42, 16, 64, 0.92);
+    border-color: var(--neon-pink, #ff2ea6);
+    box-shadow:
+      inset 0 3px 0 rgba(0, 0, 0, 0.35),
+      0 1px 3px rgba(0, 0, 0, 0.45);
+    transform: translateY(1px);
+  }
+
+  .dpadLeft {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .dpadUp {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .dpadDown {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .dpadRight {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(3, 2.6rem);
+    grid-template-rows: repeat(3, 2.6rem);
+    gap: 0.2rem;
+  }
+
+  .actionBtn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    color: #fff;
+    border: 2px solid;
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -3px 0 rgba(0, 0, 0, 0.4),
+      0 2px 6px rgba(0, 0, 0, 0.45);
+  }
+
+  .actionBtn:active {
+    box-shadow:
+      inset 0 3px 0 rgba(0, 0, 0, 0.4),
+      0 1px 3px rgba(0, 0, 0, 0.45);
+    transform: translateY(1px);
+  }
+
+  .actionSpecial {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 0.42rem;
+    background: linear-gradient(180deg, rgba(120, 95, 0, 0.92) 0%, rgba(70, 55, 0, 0.95) 100%);
+    border-color: #ffe500;
+    text-shadow: 0 0 6px rgba(255, 229, 0, 0.45);
+  }
+
+  .actionSpecial:active {
+    background: linear-gradient(180deg, rgba(90, 72, 0, 0.95) 0%, rgba(50, 40, 0, 0.98) 100%);
+    border-color: #fff176;
+  }
+
+  .actionPunch {
+    grid-column: 1;
+    grid-row: 2;
+    background: linear-gradient(180deg, rgba(28, 110, 38, 0.92) 0%, rgba(12, 58, 18, 0.95) 100%);
+    border-color: #4ade4a;
+    text-shadow: 0 0 6px rgba(74, 222, 74, 0.35);
+  }
+
+  .actionPunch:active {
+    background: linear-gradient(180deg, rgba(20, 82, 28, 0.95) 0%, rgba(8, 42, 12, 0.98) 100%);
+    border-color: #86ef86;
+  }
+
+  .actionFly {
+    grid-column: 3;
+    grid-row: 2;
+    background: linear-gradient(180deg, rgba(18, 95, 125, 0.92) 0%, rgba(8, 52, 72, 0.95) 100%);
+    border-color: #4df9ff;
+    text-shadow: 0 0 6px rgba(77, 249, 255, 0.35);
+  }
+
+  .actionFly:active {
+    background: linear-gradient(180deg, rgba(12, 72, 95, 0.95) 0%, rgba(4, 38, 52, 0.98) 100%);
+    border-color: #a5f3fc;
+  }
+
+  .actionKick {
+    grid-column: 2;
+    grid-row: 3;
+    background: linear-gradient(180deg, rgba(72, 118, 18, 0.92) 0%, rgba(38, 68, 8, 0.95) 100%);
+    border-color: #b8ff2a;
+    text-shadow: 0 0 6px rgba(184, 255, 42, 0.35);
+  }
+
+  .actionKick:active {
+    background: linear-gradient(180deg, rgba(55, 90, 12, 0.95) 0%, rgba(28, 50, 4, 0.98) 100%);
+    border-color: #d9ff6b;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 320px) {
+  .dpad {
+    grid-template-columns: repeat(3, 2.2rem);
+    grid-template-rows: repeat(3, 2.2rem);
+  }
+
+  .actions {
+    grid-template-columns: repeat(3, 2.2rem);
+    grid-template-rows: repeat(3, 2.2rem);
+  }
+
+  .dpadBtn {
+    font-size: 0.48rem;
+  }
+
+  .actionBtn {
+    font-size: 0.48rem;
+  }
+
+  .actionSpecial {
+    font-size: 0.36rem;
+  }
+}

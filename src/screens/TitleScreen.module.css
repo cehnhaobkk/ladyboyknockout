@@ -1,0 +1,657 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  background: #000;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.marquee {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  overflow: hidden;
+  background: #000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.7rem 0;
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 55s linear infinite;
+}
+
+.marqueeText {
+  flex-shrink: 0;
+  padding-right: 3rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #ffe500;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-shadow: 1px 1px 0 rgba(255, 27, 141, 0.35);
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 35%, rgba(0, 0, 0, 0.72) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(255, 255, 255, 0.018) 2px,
+    rgba(255, 255, 255, 0.018) 3px
+  );
+}
+
+.bgGlow {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: min(720px, 95vw);
+  height: min(520px, 58vh);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 27, 141, 0.09) 0%,
+    rgba(255, 107, 0, 0.045) 38%,
+    transparent 68%
+  );
+  animation: glowBreathe 10s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 27, 141, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 27, 141, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 55% 45% at 50% 46%, black 10%, transparent 72%);
+}
+
+.bgFloor {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: calc(0.85rem + 1.125rem + 0.45rem);
+  height: 2px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 27, 141, 0.35) 20%,
+    rgba(255, 229, 0, 0.45) 50%,
+    rgba(255, 27, 141, 0.35) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 12px rgba(255, 27, 141, 0.2);
+  animation: floorPulse 5s ease-in-out infinite;
+}
+
+@keyframes floorPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scaleX(0.94);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes glowBreathe {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bgGlow,
+  .bgFloor {
+    animation: none;
+  }
+
+  .logoWrap {
+    animation: none;
+  }
+
+  .logo {
+    animation: none;
+  }
+
+  .bgGlow {
+    opacity: 0.8;
+    transform: translate(-50%, -50%);
+  }
+
+  .bgFloor {
+    opacity: 0.6;
+    transform: none;
+  }
+
+  .marqueeTrack {
+    animation: none;
+  }
+}
+
+.content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  width: 100%;
+  padding: 0 1.25rem;
+  box-sizing: border-box;
+}
+
+.logoWrap {
+  margin-top: -24px;
+  display: flex;
+  justify-content: center;
+}
+
+.logo {
+  width: min(446px, 64vw, 48vh);
+  max-height: min(48vh, 420px);
+  height: auto;
+  object-fit: contain;
+  display: block;
+  animation: logoFloat 3s ease-in-out infinite;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(-24px);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
+}
+
+.startBtn {
+  margin-top: 48px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.52rem, 2.4vw, 0.72rem);
+  color: #ffe500;
+  text-shadow:
+    2px 2px #ff1b8d,
+    3px 3px #c4006a,
+    4px 4px #7a003f;
+  border: 2px solid #ffe500;
+  background: rgba(7, 7, 15, 0.72);
+  padding: 0.95rem 1.35rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  animation: btnPulse 2s ease-in-out infinite;
+  transition: background 0.15s ease;
+}
+
+.startBtn:hover:not(:disabled) {
+  background: rgba(20, 10, 28, 0.88);
+}
+
+.startBtn:disabled {
+  cursor: default;
+  animation: none;
+  opacity: 1;
+}
+
+.startBtn.loading {
+  animation: none;
+  opacity: 1;
+}
+
+@keyframes btnPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.aboutBtn {
+  grid-column: 1;
+  justify-self: start;
+  pointer-events: auto;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(6px, min(1.1vw, 1.6vh), 10px);
+  color: #ffe500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.05em;
+  line-height: 1.8;
+  white-space: nowrap;
+}
+
+.aboutBtn:hover {
+  color: #fff176;
+}
+
+.aboutOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.62);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aboutOverlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.aboutPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 61;
+  width: min(440px, 100%);
+  height: 100%;
+  background: linear-gradient(180deg, #0d0d18 0%, #07070f 100%);
+  border-left: 2px solid rgba(255, 27, 141, 0.35);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.65);
+  transform: translateX(100%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  padding: 1.5rem 1.5rem 2.25rem;
+  box-sizing: border-box;
+}
+
+.aboutPanel.open {
+  transform: translateX(0);
+}
+
+.panelBody {
+  padding-top: 2.5rem;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1.15rem;
+  right: 1.25rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+  line-height: 1.5;
+}
+
+.closeBtn:hover {
+  color: #ff1b8d;
+}
+
+.aboutTitle {
+  margin: 0 0 2rem;
+  font-size: 15px;
+  line-height: 1.75;
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, #ff6b00 0%, #ff1b8d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.section {
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.section::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 27, 141, 0.45) 25%,
+    rgba(255, 229, 0, 0.3) 50%,
+    rgba(255, 27, 141, 0.45) 75%,
+    transparent 100%
+  );
+}
+
+.section:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.section:last-child::after {
+  display: none;
+}
+
+.sectionHeading {
+  margin: 0 0 1.1rem;
+  font-size: 12px;
+  color: #ffd700;
+  letter-spacing: 0.06em;
+  line-height: 1.65;
+}
+
+.sectionBody {
+  margin: 0;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.95;
+  letter-spacing: 0.02em;
+}
+
+.sectionBody + .sectionBody {
+  margin-top: 1.1rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(255, 27, 141, 0.22);
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.badges {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.4rem 0.45rem;
+  font-size: 9px;
+  color: #ffe500;
+  background: rgba(255, 27, 141, 0.18);
+  border: 1px solid rgba(255, 27, 141, 0.55);
+  line-height: 1;
+}
+
+.controlLabel {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.65;
+}
+
+.contactBlock {
+  margin-top: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.contactLink {
+  display: block;
+  font-size: 10px;
+  color: #ff1b8d;
+  text-decoration: none;
+  line-height: 2;
+  word-break: break-all;
+}
+
+.contactLink:hover {
+  color: #ffe500;
+}
+
+.coffeeBtn {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #ffe500;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  line-height: 1.65;
+  border: 2px solid rgba(255, 229, 0, 0.65);
+  background: rgba(255, 27, 141, 0.14);
+  box-shadow: 0 0 12px rgba(255, 27, 141, 0.25);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.coffeeBtn:hover {
+  color: #fff;
+  background: rgba(255, 27, 141, 0.32);
+  border-color: #ffe500;
+}
+
+.version {
+  margin-top: 1.25rem;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.38);
+  line-height: 1.85;
+  letter-spacing: 0.05em;
+}
+
+.chrome {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 1.1rem max(1rem, calc(0.85rem + env(safe-area-inset-bottom, 0px)));
+  pointer-events: none;
+}
+
+.advisory {
+  grid-column: 2;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(6px, min(1.1vw, 1.6vh), 11px);
+  color: rgba(255, 255, 255, 0.42);
+  letter-spacing: 0.05em;
+  line-height: 1.8;
+  padding: 0;
+  max-width: min(92vw, 42rem);
+  justify-self: center;
+}
+
+.heart {
+  color: #ff1b8d;
+  font-size: clamp(8px, min(1.5vw, 2.2vh), 14px);
+  display: inline-block;
+  vertical-align: -1px;
+  line-height: 1;
+}
+
+@media (min-width: 769px) {
+  .bgFloor {
+    bottom: calc(0.85rem + 1.125rem + 0.45rem + 8px);
+  }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .advisory {
+    font-size: clamp(6px, 2.4vw, 9px);
+    max-width: 92vw;
+  }
+
+  .aboutBtn {
+    font-size: clamp(6px, 2.2vw, 9px);
+  }
+
+  .heart {
+    font-size: clamp(8px, 3vw, 12px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .content {
+    top: 46%;
+    transform: translate(-50%, -50%);
+    padding: 0 1rem;
+    max-height: 100%;
+  }
+
+  .logoWrap {
+    margin-top: -0.35rem;
+  }
+
+  .logo {
+    width: min(73.7vw, 58.3vh, 278px);
+    max-height: min(48.4vh, 48.4dvh, 228px);
+    animation: logoFloatLandscape 3s ease-in-out infinite;
+  }
+
+  .startBtn {
+    margin-top: clamp(0.66rem, 2.64vh, 1.32rem);
+    font-size: clamp(0.502rem, 2.376vw, 0.66rem);
+    padding: 0.726rem 1.122rem;
+  }
+
+  .chrome {
+    padding: 0 max(0.65rem, env(safe-area-inset-right))
+      max(0.9rem, calc(0.7rem + env(safe-area-inset-bottom, 0px)))
+      max(0.65rem, env(safe-area-inset-left));
+  }
+
+  .bgFloor {
+    bottom: calc(0.7rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .aboutBtn {
+    font-size: clamp(9px, min(1.4vw, 2.5vh), 12px);
+    line-height: 1.5;
+  }
+
+  .advisory {
+    font-size: clamp(9px, min(1.4vw, 2.5vh), 12px);
+    line-height: 1.55;
+    letter-spacing: 0.03em;
+    max-width: min(88vw, 36rem);
+  }
+
+  .heart {
+    font-size: clamp(11px, min(1.9vw, 2.8vh), 15px);
+  }
+
+  .marquee {
+    padding: 0.35rem 0;
+  }
+
+  .marqueeText {
+    font-size: 10px;
+  }
+
+  .aboutPanel {
+    width: min(360px, 85vw);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 420px) {
+  .chrome {
+    padding-bottom: max(0.8rem, calc(0.6rem + env(safe-area-inset-bottom, 0px)));
+  }
+
+  .bgFloor {
+    bottom: calc(0.6rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .logo {
+    width: min(66vw, 50.6vh, 228px);
+    max-height: min(40.7vh, 40.7dvh, 190px);
+  }
+
+  .startBtn {
+    margin-top: 0.528rem;
+    font-size: 0.475rem;
+    padding: 0.594rem 0.924rem;
+  }
+
+  .aboutBtn,
+  .advisory {
+    font-size: clamp(9px, min(1.25vw, 2.2vh), 11px);
+  }
+
+  .heart {
+    font-size: clamp(10px, min(1.7vw, 2.5vh), 14px);
+  }
+}
+
+@keyframes logoFloatLandscape {
+  0%,
+  100% {
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
