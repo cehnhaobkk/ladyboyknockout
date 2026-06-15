@@ -748,19 +748,38 @@
     --chrome-text-size: clamp(5px, 1.7vw, 8px);
   }
 
+  .content {
+    gap: clamp(3.25rem, 11vh, 5rem);
+  }
+
+  .logoWrap {
+    margin-top: -12px;
+  }
+
   .logo {
-    width: min(446px, 86vw, 64.5vh);
-    max-height: min(64.5vh, 420px);
+    width: min(446px, 94vw, 54vh);
+    max-height: min(54vh, 480px);
   }
 
   .startBtn {
-    margin-top: clamp(4rem, 11vh, 4.5rem);
-    font-size: clamp(0.7rem, 3.2vw, 0.96rem);
-    padding: 1.28rem 1.82rem;
+    margin-top: 0;
+    font-size: clamp(0.8rem, 3.8vw, 1.05rem);
+    padding: 1.45rem 2.1rem;
+  }
+
+  .chrome {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    column-gap: 0.75rem;
   }
 
   .fullscreenBtn {
-    font-size: clamp(5px, 1.7vw, 8px);
+    font-size: clamp(6px, 2vw, 9px);
+    padding: 0.45rem 0.2rem;
+    min-height: 2.75rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
   }
 
   .marquee {
@@ -778,7 +797,11 @@
   }
 
   .aboutBtn {
-    font-size: clamp(5px, 1.7vw, 8px);
+    font-size: clamp(6px, 2vw, 9px);
+    padding: 0.45rem 0.2rem;
+    min-height: 2.75rem;
+    display: flex;
+    align-items: flex-end;
   }
 
   .welcomeText {
@@ -806,22 +829,23 @@
     transform: translate(-50%, -50%);
     padding: 0 1rem;
     max-height: 100%;
+    gap: clamp(1rem, 3.5vh, 1.75rem);
   }
 
   .logoWrap {
-    margin-top: -0.35rem;
+    margin-top: -0.25rem;
   }
 
   .logo {
-    width: min(73.7vw, 58.3vh, 278px);
-    max-height: min(48.4vh, 48.4dvh, 228px);
+    width: min(80vw, 64vh, 320px);
+    max-height: min(54vh, 54dvh, 268px);
     animation: logoFloatLandscape 3s ease-in-out infinite;
   }
 
   .startBtn {
-    margin-top: clamp(0.66rem, 2.64vh, 1.32rem);
-    font-size: clamp(0.502rem, 2.376vw, 0.66rem);
-    padding: 0.726rem 1.122rem;
+    margin-top: 0;
+    font-size: clamp(0.58rem, 2.8vw, 0.76rem);
+    padding: 0.9rem 1.45rem;
   }
 
   .chrome {
@@ -835,8 +859,21 @@
   }
 
   .aboutBtn {
-    font-size: clamp(7px, min(1.2vw, 2.2vh), 11px);
+    font-size: clamp(7px, min(1.35vw, 2.4vh), 11px);
     line-height: 1.5;
+    padding: 0.4rem 0.15rem;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .fullscreenBtn {
+    font-size: clamp(7px, min(1.35vw, 2.4vh), 11px);
+    padding: 0.4rem 0.15rem;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
   }
 
   .welcomeText {
@@ -882,14 +919,14 @@
   }
 
   .logo {
-    width: min(66vw, 50.6vh, 228px);
-    max-height: min(40.7vh, 40.7dvh, 190px);
+    width: min(72vw, 56vh, 260px);
+    max-height: min(46vh, 46dvh, 220px);
   }
 
   .startBtn {
-    margin-top: 0.528rem;
-    font-size: 0.475rem;
-    padding: 0.594rem 0.924rem;
+    margin-top: 0;
+    font-size: clamp(0.52rem, 2.5vw, 0.68rem);
+    padding: 0.72rem 1.15rem;
   }
 
   .aboutBtn,
