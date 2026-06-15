@@ -243,9 +243,9 @@ export const KYLE_STATES = {
   KO: {
     pose: 'lose',
     duration: null,
-    loop: false,
+    loop: true,
     interruptible: false,
-    cssAnimation: 'kyleFall 0.5s ease forwards',
+    cssAnimation: 'none',
     koClass: 'kyle-ko',
   },
 }

@@ -664,11 +664,12 @@ body {
 .mob-vs {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  grid-template-rows: min(50vh, 50dvh, 230px) auto;
+  grid-template-rows: max-content auto;
+  align-content: end;
   align-items: end;
   justify-items: center;
   column-gap: clamp(0.35rem, 2vw, 0.85rem);
-  row-gap: 0.15rem;
+  row-gap: 0.2rem;
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
@@ -768,8 +769,9 @@ body {
 .mob-vs-enemy .mob-vs-meta {
   grid-row: 2;
   width: 100%;
-  height: clamp(2.85rem, 10.5vh, 3.35rem);
-  min-height: clamp(2.85rem, 10.5vh, 3.35rem);
+  max-width: min(42vw, 240px);
+  height: auto;
+  min-height: clamp(2.55rem, 9.5vh, 3rem);
   justify-content: flex-start;
   overflow: hidden;
 }
@@ -792,13 +794,27 @@ body {
   align-items: flex-end;
   justify-content: center;
   width: 100%;
-  height: 100%;
+  max-width: min(42vw, 240px);
+  height: auto;
+  max-height: min(48vh, 48dvh, 215px);
   min-height: 0;
   overflow: visible;
 }
-.mob-vs-placeholder-figure {
-  align-items: flex-end;
+.mob-vs-placeholder-stack {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: end;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  max-width: min(42vw, 240px);
+  min-height: min(48vh, 48dvh, 215px);
+  max-height: min(48vh, 48dvh, 215px);
+  text-align: center;
 }
 .mob-vs-placeholder-q {
   font-size: clamp(1.75rem, 11vh, 3rem);
@@ -811,7 +827,8 @@ body {
   align-items: flex-end;
   justify-content: center;
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: min(48vh, 48dvh, 215px);
 }
 .mob-vs-portrait.is-flipped {
   transform: scaleX(-1);
@@ -819,7 +836,7 @@ body {
 .mob-vs-portrait img {
   width: auto;
   max-width: 100%;
-  max-height: 100%;
+  max-height: min(48vh, 48dvh, 215px);
   height: auto;
   object-fit: contain;
   object-position: bottom center;
@@ -846,7 +863,7 @@ body {
   font-size: clamp(0.85rem, 5.5vh, 1.35rem);
   color: var(--neon-pink);
   padding: 0;
-  margin: 0;
+  margin: 0 0 0.2rem;
 }
 .mob-vs-placeholder {
   font-size: clamp(0.34rem, 2.2vh, 0.44rem);
@@ -1745,12 +1762,6 @@ body {
   50%     { transform: translateY(-12px) rotate(4deg) scaleX(1.04); }
   75%     { transform: translateY(-16px) rotate(-3deg) scaleX(0.98); }
 }
-@keyframes kyleFall {
-  0%   { transform: rotate(0) translateY(0); opacity: 1; }
-  30%  { transform: rotate(-20deg) translateY(10px); }
-  60%  { transform: rotate(-60deg) translateY(20px); }
-  100% { transform: rotate(-78deg) translateY(24%); opacity: 1; }
-}
 @keyframes dmitriBob {
   0%,100% { transform: translateY(0) scaleY(1); }
   45%     { transform: translateY(-4px) scaleY(1.02); }
@@ -1871,11 +1882,9 @@ body {
 .fighter-image.dave-ko,
 .fighter-image.dmitri-ko,
 .fighter-image.rajesh-ko,
-.fighter-image.xiaoming-ko {
-  animation: none !important;
-}
+.fighter-image.xiaoming-ko,
 .fighter-image.kyle-ko {
-  animation: kyleFall 0.5s ease forwards !important;
+  animation: none !important;
 }
 .hit-flash.gold { background: rgba(230, 120, 30, 0.5); }
 .hit-flash.cyan { background: rgba(0, 200, 255, 0.4); }
@@ -3422,14 +3431,10 @@ export default function App() {
                   const e = previewId ? getEnemyById(previewId) : null
                   if (!e) {
                     return (
-                      <>
-                        <div className="mob-vs-figure mob-vs-placeholder-figure">
-                          <span className="mob-vs-placeholder-q">?</span>
-                        </div>
-                        <div className="mob-vs-meta">
-                          <p className="mob-vs-placeholder">Pick a fighter</p>
-                        </div>
-                      </>
+                      <div className="mob-vs-placeholder-stack">
+                        <span className="mob-vs-placeholder-q">?</span>
+                        <p className="mob-vs-placeholder">Pick a fighter</p>
+                      </div>
                     )
                   }
                   return (
@@ -3456,14 +3461,10 @@ export default function App() {
                   )
                 })()
               ) : (
-                <>
-                  <div className="mob-vs-figure mob-vs-placeholder-figure">
-                    <span className="mob-vs-placeholder-q">?</span>
-                  </div>
-                  <div className="mob-vs-meta">
-                    <p className="mob-vs-placeholder">Pick a fighter</p>
-                  </div>
-                </>
+                <div className="mob-vs-placeholder-stack">
+                  <span className="mob-vs-placeholder-q">?</span>
+                  <p className="mob-vs-placeholder">Pick a fighter</p>
+                </div>
               )}
             </div>
           </div>

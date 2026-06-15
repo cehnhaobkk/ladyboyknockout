@@ -58,7 +58,7 @@ export function snapPixelWidth(nativeWidth, nativeHeight, displayHeight) {
 /** Shift KO lose poses down so fallen fighters sit on the stage floor. */
 const KO_GROUND_OFFSET_RATIO = {
   dave: 0.24,
-  kyle: 0.28,
+  kyle: 0.24,
   xiaoming: 0.22,
   rajesh: 0.24,
   dmitri: 0.22,
