@@ -19,7 +19,7 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
   })
 
   const config = getStateConfig(character, state)
-  const poseImage = assets[config.pose]
+  const poseImage = assets[config.pose] || assets.standby
 
   useEffect(() => {
     if (!poseImage) return undefined
@@ -43,7 +43,7 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
   }
 
   if (!poseImage) {
-    return null
+    return <div style={{ width: 80, height, background: 'transparent' }} />
   }
 
   const koClass = config.koClass || ''

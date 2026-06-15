@@ -127,7 +127,7 @@ export default function TitleScreen({ onStart }) {
             </p>
             <p className={styles.sectionBody}>
               Win two out of three rounds across Bangkok, Pattaya, Phuket, or Chiang Mai. Chain
-              combos, land your Stiletto Storm special, and shut down their signature moves. Choose
+              combos, land your Som Tam Slam special, and shut down their signature moves. Choose
               your rival or let fate decide. They always find out the hard way. 💅
             </p>
           </section>

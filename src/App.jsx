@@ -24,9 +24,10 @@ const PLAYER = {
   name: 'Nong Nut',
   title: 'The Knockout Queen',
   tagline: 'They always find out the hard way!',
-  hp: 100,
+  hp: 150,
   atk: 20,
-  special: 'STILETTO STORM 💅',
+  special: 'SOM TAM SLAM 🌶️',
+  specialTagline: 'Extra spicy, no warning',
   img: '/characters/nong_nut.png',
 }
 
@@ -35,7 +36,7 @@ const ENEMIES = [
     id: 'dave',
     name: 'Dave',
     title: 'The Pattaya Geezer',
-    hp: 95,
+    hp: 143,
     atk: 16,
     special: 'Beer Belly Bash 🍺',
     taunt: 'Been coming here 20 years, love.',
@@ -47,7 +48,7 @@ const ENEMIES = [
     id: 'kyle',
     name: 'Kyle',
     title: 'The Passport Bro',
-    hp: 90,
+    hp: 135,
     atk: 19,
     special: 'Red Pill Rush 📱',
     taunt: 'I escaped the matrix, bro.',
@@ -59,7 +60,7 @@ const ENEMIES = [
     id: 'xiaoming',
     name: 'Xiaoming',
     title: 'The Tour Group Boss',
-    hp: 92,
+    hp: 138,
     atk: 18,
     special: 'Selfie Stick Smash 📸',
     taunt: 'CAOOOO! Very cheap here!',
@@ -71,7 +72,7 @@ const ENEMIES = [
     id: 'rajesh',
     name: 'Rajesh',
     title: 'The Delhi Dynamo',
-    hp: 88,
+    hp: 132,
     atk: 17,
     special: 'Curry Cyclone 🌶️',
     taunt: 'Can I get WhatsApp number?',
@@ -83,7 +84,7 @@ const ENEMIES = [
     id: 'dmitri',
     name: 'Dmitri',
     title: 'The Walking Open Bar',
-    hp: 110,
+    hp: 165,
     atk: 23,
     special: 'Vodka Volley 🥃',
     taunt: 'Open 24x7. Last call is when he falls.',
@@ -373,6 +374,9 @@ const FRICTION = 0.82
 const GROUND_FRICTION = 0.58
 const SPRITE_W = 176
 const HITBOX_PAD = 24
+const HIT_INVULN_MS = 380
+const SUPER_DAMAGE_RATIO = 0.28
+const BLOCK_CHIP_RATIO = 0.3
 
 const ATTACK_STATES = ['PUNCH', 'KICK', 'FLYKICK', 'SPECIAL', 'DODGE', 'SUPER']
 
@@ -400,8 +404,8 @@ function randRange(a, b) {
 }
 
 function rollDamage(atk, isSpecial) {
-  const base = atk * randRange(0.6, 1.3)
-  if (isSpecial) return base * randRange(1.5, 2.5)
+  const base = atk * randRange(0.55, 1.15)
+  if (isSpecial) return base * randRange(1.25, 1.75)
   return base
 }
 
@@ -1698,18 +1702,6 @@ body {
   color: #ff8800;
   text-shadow: 2px 2px 0 #000;
   margin-top: 4px;
-}
-.get-up-prompt {
-  position: absolute;
-  left: 50%;
-  bottom: 28%;
-  transform: translateX(-50%);
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(0.6rem, 2.5vw, 0.9rem);
-  color: #ffff00;
-  text-shadow: 2px 2px 0 #ff0000;
-  animation: timerTick 0.4s ease-in-out infinite;
-  z-index: 28;
 }
 .super-flash-white {
   position: absolute;
@@ -3101,7 +3093,7 @@ export default function App() {
 
     const tickFighterState = (side, nowTs) => {
       const meta = animRef.current[side]
-      if (meta.state === 'KO' || meta.state === 'WIN') return
+      if (meta.state === 'KO' || meta.state === 'WIN' || meta.state === 'BLOCK') return
       if (meta.until && nowTs >= meta.until) {
         meta.state = 'IDLE'
         meta.until = 0
@@ -3230,7 +3222,6 @@ export default function App() {
           }
           sys.onKO(winner)
           sys.onRoundEnd(winner, 'timeout', f, performance.now())
-          f.roundEndAt = performance.now() + 5200
         }
       }
       updateFightHudDom(f)
@@ -3275,8 +3266,8 @@ export default function App() {
       const isSuper = hitOpts.isSuper || false
       const blocked = fr.enemyBlocking
 
-      let raw = isSuper ? fr.emax * 0.4 : rollDamage(playerDef.atk, isSpecial)
-      if (sys.taunts.isTaunting('enemy')) raw *= 1.5
+      let raw = isSuper ? fr.emax * SUPER_DAMAGE_RATIO : rollDamage(playerDef.atk, isSpecial)
+      if (sys.taunts.isTaunting('enemy')) raw *= 1.25
 
       const hitX = fr.ex + enemySpriteW() / 2
       const hitY = fr.arenaH * 0.42
@@ -3287,7 +3278,7 @@ export default function App() {
           isSpecial, x: hitX, y: hitY, now, fightState: fr,
           defenderMaxHp: fr.emax, defenderHp: fr.ehp, defenderHpAfter: fr.ehp,
         })
-        fr.ehp = Math.max(0, fr.ehp - raw * 0.4)
+        fr.ehp = Math.max(0, fr.ehp - raw * BLOCK_CHIP_RATIO)
         setFighterState('enemy', 'DODGE', true)
         bumpHud()
         return
@@ -3307,13 +3298,9 @@ export default function App() {
       sys.rounds.trackDamage('enemy', dmg)
       fr.roundDamageTakenEnemy += dmg
 
-      if (result.knockedDown) {
-        setFighterState('enemy', 'KNOCKDOWN', true)
-      } else {
-        setFighterState('enemy', 'HURT', true)
-      }
+      setFighterState('enemy', 'HURT', true)
       fr.hurtSpark = { x: fr.ex + 88, y: fr.arenaH * 0.38, until: performance.now() + 250 }
-      fr.enemyInvuln = performance.now() + 220
+      fr.enemyInvuln = performance.now() + HIT_INVULN_MS
       flashHit()
       flashFighter('enemy')
       addDamageNumber(fr.ex + 30, fr.arenaH * 0.42, dmg, '#ff6')
@@ -3321,7 +3308,9 @@ export default function App() {
       playSound('hit')
       updateFightHudDom(fr)
       if (isSpecial && !isSuper) {
-        fr.battleMsg = playerDef.special
+        fr.battleMsg = playerDef.specialTagline
+          ? `${playerDef.special} — ${playerDef.specialTagline}`
+          : playerDef.special
         fr.battleMsgUntil = now + 900
       }
       if (fr.ehp <= 0) {
@@ -3333,7 +3322,6 @@ export default function App() {
         fr.roundWinnerSide = 'player'
         sys.onKO('player')
         sys.onRoundEnd('player', 'ko', fr, now)
-        fr.roundEndAt = performance.now() + 5200
         setFighterState('player', 'WIN', true)
         setFighterState('enemy', 'KO', true)
       }
@@ -3351,8 +3339,8 @@ export default function App() {
       const isSuper = hitOpts.isSuper || false
       const blocked = fr.playerBlocking
 
-      let raw = isSuper ? fr.pmax * 0.4 : rollDamage(enemyDef.atk, isSpecial)
-      if (sys.taunts.isTaunting('player')) raw *= 1.5
+      let raw = isSuper ? fr.pmax * SUPER_DAMAGE_RATIO : rollDamage(enemyDef.atk, isSpecial)
+      if (sys.taunts.isTaunting('player')) raw *= 1.25
 
       const hitX = fr.px + playerSpriteW() / 2
       const hitY = fr.arenaH * 0.42
@@ -3363,7 +3351,7 @@ export default function App() {
           isSpecial, x: hitX, y: hitY, now, fightState: fr,
           defenderMaxHp: fr.pmax, defenderHp: fr.php, defenderHpAfter: fr.php,
         })
-        fr.php = Math.max(0, fr.php - raw * 0.4)
+        fr.php = Math.max(0, fr.php - raw * BLOCK_CHIP_RATIO)
         bumpHud()
         return
       }
@@ -3383,13 +3371,8 @@ export default function App() {
       fr.roundDamageTakenPlayer += dmg
       if (pushback) fr.pvx = (fr.ex < fr.px ? 1 : -1) * 8
 
-      if (result.knockedDown) {
-        setFighterState('player', 'KNOCKDOWN', true)
-        sys.announcer.onGetUp()
-      } else {
-        setFighterState('player', 'HURT', true)
-      }
-      fr.playerInvuln = performance.now() + 220
+      setFighterState('player', 'HURT', true)
+      fr.playerInvuln = performance.now() + HIT_INVULN_MS
       flashHit()
       flashFighter('player')
       addDamageNumber(fr.px + 20, fr.arenaH * 0.42, dmg, '#f88')
@@ -3405,7 +3388,6 @@ export default function App() {
         fr.roundWinnerSide = 'enemy'
         sys.onKO('enemy')
         sys.onRoundEnd('enemy', 'ko', fr, now)
-        fr.roundEndAt = performance.now() + 5200
         setFighterState('enemy', 'WIN', true)
         triggerPlayerKoSequence(performance.now())
         setFighterState('player', 'KO', true)
@@ -3442,9 +3424,12 @@ export default function App() {
         if (f._lastRoundPhase !== sys.rounds.phase) {
           const phase = sys.rounds.phase
           if (
-            phase === ROUND_PHASE.WALKBACK
-            || phase === ROUND_PHASE.INTRO
-            || phase === ROUND_PHASE.FIGHTING
+            !f.matchOver
+            && (
+              phase === ROUND_PHASE.WALKBACK
+              || phase === ROUND_PHASE.INTRO
+              || phase === ROUND_PHASE.FIGHTING
+            )
           ) {
             resetFightersStanding()
           }
@@ -3514,7 +3499,7 @@ export default function App() {
       const blocking = k.has('ArrowDown') && onGroundP && f.playerAttackLock < now
       f.playerBlocking = blocking
       if (blocking) {
-        setFighterState('player', 'DODGE')
+        setFighterState('player', 'BLOCK')
         f.pvx = 0
       }
 
@@ -3569,10 +3554,6 @@ export default function App() {
       }
       const mashed = pressedDown()
       pressRef.current.clear()
-
-      if (sys?.knockdown.isDown('player')) {
-        if (mashed.size > 0) sys.knockdown.registerMash('player')
-      }
 
       if (f.superDash && now < f.superDash.until) {
         const dir = Math.sign(f.ex - f.px) || 1

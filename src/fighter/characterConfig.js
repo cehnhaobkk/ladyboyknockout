@@ -16,6 +16,7 @@ export const CHARACTER_POSES = {
     kick: '/characters/nong_nut/3_kick.png',
     flykick: '/characters/nong_nut/4_attack.png',
     attack: '/characters/nong_nut/4_attack.png',
+    standoff: '/characters/nong_nut/5_hide.png',
     dodge: '/characters/nong_nut/5_hide.png',
     underattack: '/characters/nong_nut/6_lost.png',
     win: '/characters/nong_nut/5_NN_win.png',
@@ -26,7 +27,7 @@ export const CHARACTER_POSES = {
     punch: '/characters/kyle/2_KY_punch.png',
     kick: '/characters/kyle/3_KY_kick.png',
     flykick: '/characters/kyle/3_KY_kick.png',
-    under_attack: '/characters/kyle/4_KY_under_attack.png',
+    underattack: '/characters/kyle/4_KY_under_attack.png',
     charge: '/characters/kyle/5_KY_charge.png',
     win: '/characters/kyle/6__KY_win.png',
     lose: '/characters/kyle/7_KY_lose.png',
@@ -250,7 +251,7 @@ export const KYLE_STATES = {
     cssAnimation: 'kyleHurt 0.5s ease-out',
   },
   HURT: {
-    pose: 'under_attack',
+    pose: 'underattack',
     duration: 420,
     loop: false,
     interruptible: false,
@@ -271,6 +272,30 @@ export const KYLE_STATES = {
     interruptible: false,
     cssAnimation: 'none',
     koClass: 'kyle-ko',
+  },
+  TAUNT: {
+    pose: 'standby',
+    duration: 1200,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'kyleBob 0.7s ease-in-out infinite',
+  },
+  KNOCKDOWN: {
+    pose: 'underattack',
+    duration: 2000,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'kyleHurt 0.5s ease-out',
+  },
+  SUPER: {
+    pose: 'charge',
+    duration: 800,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'kyleCharge 0.8s ease-out',
+    hitFrame: 350,
+    range: 300,
+    isSpecial: true,
   },
 }
 
@@ -527,6 +552,13 @@ const GENERIC_STATES = {
     range: 145,
     isSpecial: true,
   },
+  BLOCK: {
+    pose: 'dodge',
+    duration: null,
+    loop: true,
+    interruptible: true,
+    cssClass: '',
+  },
   DODGE: {
     pose: 'dodge',
     duration: 500,
@@ -591,6 +623,20 @@ const CHARACTER_OVERRIDES = {
     PUNCH: { damage: 20, range: 130 },
     KICK: { damage: 22, range: 140 },
     SPECIAL: { damage: 30, range: 150, hitFrame: 200 },
+    BLOCK: {
+      pose: 'standoff',
+      duration: null,
+      loop: true,
+      interruptible: true,
+      cssClass: '',
+    },
+    TAUNT: {
+      pose: 'win',
+      duration: 1200,
+      loop: false,
+      interruptible: false,
+      cssClass: 'win-fx',
+    },
   },
 }
 

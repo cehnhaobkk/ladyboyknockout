@@ -87,7 +87,7 @@ export class GameSystemsManager {
       this.combo.onBlock(defender, now)
       this.knockdown.onBlock(defender)
       this.announcer.onBlocked()
-      return { damage: ctx.damage * 0.4, blocked: true }
+      return { damage: ctx.damage * 0.3, blocked: true }
     }
 
     const comboResult = this.combo.registerHit(attacker, now)
@@ -245,7 +245,6 @@ export class GameSystemsManager {
       roundPhase: this.rounds.phase,
       playerDown: this.knockdown.isDown('player'),
       enemyDown: this.knockdown.isDown('enemy'),
-      showGetUp: this.knockdown.isDown('player'),
       superActive: this.superMeter.superActive,
     }
   }

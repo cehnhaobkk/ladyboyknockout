@@ -4,7 +4,7 @@ const PASSIVE_FILL_PER_FRAME = 0.008
 const DAMAGE_FILL_RATIO = 0.35
 const KNOCKDOWN_BONUS = 15
 const TAUNT_BONUS = 25
-const SUPER_DAMAGE_RATIO = 0.4
+const SUPER_DAMAGE_RATIO = 0.28
 
 export class SuperMeter {
   constructor() {

@@ -36,8 +36,8 @@ export default function FightOverlay({
       if (sys && frameRef.current % 2 === 0) {
         const next = sys.getHudState(performance.now())
         setHud((prev) => {
-          const prevKey = `${prev.announcer?.text || ''}|${prev.combo?.combo || 0}|${prev.showGetUp}|${prev.flashWhite}`
-          const nextKey = `${next.announcer?.text || ''}|${next.combo?.combo || 0}|${next.showGetUp}|${next.flashWhite}`
+          const prevKey = `${prev.announcer?.text || ''}|${prev.combo?.combo || 0}|${prev.flashWhite}`
+          const nextKey = `${next.announcer?.text || ''}|${next.combo?.combo || 0}|${next.flashWhite}`
           return prevKey === nextKey ? prev : next
         })
       }
@@ -84,9 +84,6 @@ export default function FightOverlay({
         </div>
       )}
 
-      {hud.showGetUp && (
-        <div className="get-up-prompt">GET UP!</div>
-      )}
     </div>
   )
 }

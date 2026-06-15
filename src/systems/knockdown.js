@@ -1,7 +1,7 @@
 /** Knockdown — 3 consecutive hits or heavy at low HP */
 
-const CONSECUTIVE_HIT_THRESHOLD = 3
-const LOW_HP_RATIO = 0.25
+const CONSECUTIVE_HIT_THRESHOLD = 5
+const LOW_HP_RATIO = 0.2
 const KNOCKDOWN_DURATION_MS = 2000
 const WAKEUP_INVULN_FRAMES = 20
 const FRAME_MS = 1000 / 60
@@ -62,26 +62,7 @@ export class KnockdownSystem {
     void now
   }
 
-  onHit({ defender, hitType, hpRatio, now }) {
-    if (this.isDown(defender)) return { knockedDown: false }
-
-    if (defender === 'enemy') {
-      this.playerConsecutive += 1
-      this.enemyConsecutive = 0
-    } else {
-      this.enemyConsecutive += 1
-      this.playerConsecutive = 0
-    }
-
-    const consecutive = defender === 'player' ? this.enemyConsecutive : this.playerConsecutive
-    const heavyAtLowHp = hitType === 'heavy' && hpRatio <= LOW_HP_RATIO
-
-    if (consecutive >= CONSECUTIVE_HIT_THRESHOLD || heavyAtLowHp) {
-      this.triggerKnockdown(defender, now)
-      if (defender === 'enemy') this.playerConsecutive = 0
-      else this.enemyConsecutive = 0
-      return { knockedDown: true, defender }
-    }
+  onHit() {
     return { knockedDown: false }
   }
 

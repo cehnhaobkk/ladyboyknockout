@@ -15,7 +15,6 @@ const STYLES = {
   winner: { color: '#ffd700', outline: '#000', size: 'clamp(1.4rem, 6vw, 2.6rem)' },
   flawless: { color: '#00ff88', outline: '#000', size: 'clamp(1rem, 4vw, 1.6rem)' },
   draw: { color: '#aaaaaa', outline: '#000', size: 'clamp(1.2rem, 5vw, 2rem)' },
-  getup: { color: '#ffff00', outline: '#ff0000', size: 'clamp(0.7rem, 3vw, 1rem)' },
   countdown: { color: '#ffffff', outline: '#ff2200', size: 'clamp(2.4rem, 12vw, 5rem)' },
 }
 
@@ -113,10 +112,6 @@ export class Announcer {
 
   onFlawless() {
     this.show('FLAWLESS VICTORY', 'flawless', 'zoom', 2500)
-  }
-
-  onGetUp() {
-    this.show('GET UP!', 'getup', 'pulse', 2000)
   }
 
   onDraw() {

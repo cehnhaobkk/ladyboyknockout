@@ -15,6 +15,7 @@ export const ROUND_PHASE = {
 
 const INTRO_DURATION = 2200
 const RESULT_DURATION = 2000
+const MATCH_END_DELAY = 2200
 const WALKBACK_DURATION = 1500
 const COUNTDOWN_STEP_DURATION = 800
 const FIGHT_ANNOUNCE_DURATION = 1200
@@ -98,6 +99,7 @@ export class RoundSystem {
         fightState.roundActive = true
         break
       case ROUND_PHASE.RESULT:
+        if (fightState.matchOver) break
         this.phase = ROUND_PHASE.WALKBACK
         this.phaseUntil = now + WALKBACK_DURATION
         this.walkbackProgress = 0
@@ -160,8 +162,12 @@ export class RoundSystem {
       fightState.matchWinner = 'enemy'
     }
 
-    fightState.roundEndAt = now + RESULT_DURATION + WALKBACK_DURATION + INTRO_DURATION
-      + COUNTDOWN_STEP_DURATION * 3 + FIGHT_ANNOUNCE_DURATION
+    if (fightState.matchOver) {
+      fightState.roundEndAt = now + MATCH_END_DELAY
+    } else {
+      fightState.roundEndAt = now + RESULT_DURATION + WALKBACK_DURATION + INTRO_DURATION
+        + COUNTDOWN_STEP_DURATION * 3 + FIGHT_ANNOUNCE_DURATION
+    }
 
     return { winner, isDraw: false }
   }
