@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
-import { getStateConfig, getAiTiming, usesDaveAi, usesKyleAi } from './fighter/characterConfig'
+import { getStateConfig, usesDaveAi, usesKyleAi } from './fighter/characterConfig'
 import { preloadAllFighterAssets } from './fighter/useFighterAssets'
 import Fighter from './components/Fighter'
 import HitSpark from './components/HitSpark'
@@ -9,6 +9,8 @@ import TouchControls from './components/TouchControls'
 import FightMusicToggle from './components/FightMusicToggle'
 import MobCharSelectPortrait from './components/MobCharSelectPortrait'
 import TitleScreen from './screens/TitleScreen'
+import FightOverlay from './components/FightOverlay'
+import { GameSystemsManager, ROUND_TIME, ROUND_PHASE, FIGHT_START_POSITIONS } from './systems/GameSystemsManager'
 import useMobileLandscape from './hooks/useMobileLandscape'
 import useFightMusic from './hooks/useFightMusic'
 import {
@@ -80,11 +82,11 @@ const ENEMIES = [
   {
     id: 'dmitri',
     name: 'Dmitri',
-    title: 'The Phuket Patriarch',
+    title: 'The Walking Open Bar',
     hp: 110,
     atk: 23,
     special: 'Vodka Volley 🥃',
-    taunt: 'I buy this bar. I buy YOU.',
+    taunt: 'Open 24x7. Last call is when he falls.',
     img: '/characters/dmitri.png',
     mobHeadshot: '/characters/headshots/dmitri.png',
     color: '#9b59b6',
@@ -200,6 +202,7 @@ function GameOverScreen({
   score,
   onRematch,
   onNewFight,
+  onMainMenu,
   stageBg,
 }) {
   const overlayRef = useRef(null)
@@ -220,17 +223,19 @@ function GameOverScreen({
         <img src={stageBg} alt="" />
       </div>
       <div className="gameover-scrim" aria-hidden />
-      <div className="gameover-content">
+      <div className="gameover-content gameover-dim">
         {playerWon ? (
           <>
-            <div className="go-headline go-headline-win">YOU WIN!</div>
+            <div className="go-headline go-headline-win">YOU WIN THE FIGHT!</div>
+            <div className="go-winner-sub">{PLAYER.name} is victorious</div>
             <div className="go-score">SCORE: {score.toLocaleString()}</div>
             <div className="go-score-label">{scoreLabel}</div>
             <div className="go-message">{getFunnyLine(PLAYER.id, true)}</div>
           </>
         ) : (
           <>
-            <div className="go-headline go-headline-lose">{opponentFighter.name.toUpperCase()} WINS!</div>
+            <div className="go-headline go-headline-lose">{opponentFighter.name} defeated you!</div>
+            <div className="go-winner-sub">{opponentFighter.name} is victorious</div>
             <div className="go-message go-message-lose">{getFunnyLine(opponentFighter.id, true)}</div>
           </>
         )}
@@ -251,6 +256,11 @@ function GameOverScreen({
           <button type="button" className="go-btn go-btn-new" onClick={onNewFight}>
             NEW FIGHT
           </button>
+          {onMainMenu && (
+            <button type="button" className="go-btn go-btn-menu" onClick={onMainMenu}>
+              MAIN MENU
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -354,20 +364,17 @@ function computeFighterSizes(arenaH, groundBottomPercent, playerId, enemyId) {
 const PUNCH_RANGE = 120
 const KICK_RANGE = 135
 const SPECIAL_RANGE = 145
-const COMBO_WINDOW_MS = 1500
-const COMBO_MULT = 1.45
-const COMBO_MIN_HITS = 3
 const GRAVITY = 0.55
 const MOVE_SPEED = 4.2
 const JUMP_VEL = 11.5
 const BACKFLIP_VEL_X = 6.5
 const BACKFLIP_VEL_Y = 12
 const FRICTION = 0.82
+const GROUND_FRICTION = 0.58
 const SPRITE_W = 176
 const HITBOX_PAD = 24
-const ROUND_TIME = 60
 
-const ATTACK_STATES = ['PUNCH', 'KICK', 'FLYKICK', 'SPECIAL', 'DODGE']
+const ATTACK_STATES = ['PUNCH', 'KICK', 'FLYKICK', 'SPECIAL', 'DODGE', 'SUPER']
 
 function scheduleAttack(f, side, characterId, attackState, now) {
   const config = getStateConfig(characterId, attackState)
@@ -411,6 +418,20 @@ function getFighterById(id) {
   return getEnemyById(id)
 }
 
+function snapFightersToStart(fightState, positions = FIGHT_START_POSITIONS) {
+  const w = fightState.arenaW
+  if (!w || w < 50) return false
+  fightState.px = w * positions.px
+  fightState.ex = w * positions.ex
+  fightState.pvx = 0
+  fightState.evx = 0
+  fightState.py = 0
+  fightState.ey = 0
+  fightState.pvy = 0
+  fightState.evy = 0
+  return true
+}
+
 function createFightState(opponentId, stageId) {
   const opponent = getFighterById(opponentId)
   return {
@@ -448,6 +469,10 @@ function createFightState(opponentId, stageId) {
     ew: 0,
     timeLeft: ROUND_TIME,
     roundActive: true,
+    playerRage: 0,
+    enemyRage: 0,
+    playerRageReady: false,
+    enemyRageReady: false,
     roundEndAt: 0,
     matchOver: false,
     matchWinner: null,
@@ -478,7 +503,13 @@ function createFightState(opponentId, stageId) {
     playerCharging: false,
     playerChargeUntil: 0,
     playerBlocking: false,
+    enemyBlocking: false,
     hurtSpark: null,
+    roundWinnerSide: null,
+    superDash: null,
+    aiDifficulty: 'medium',
+    roundDamageTakenPlayer: 0,
+    roundDamageTakenEnemy: 0,
   }
 }
 
@@ -1016,15 +1047,15 @@ body {
 .char-select-screen .vs-row .char-name {
   font-size: 0.7605rem;
 }
-.char-select-screen .vs-row .char-title,
-.char-select-screen .vs-row .char-taunt {
+.char-select-screen .vs-row .char-title {
   font-size: 0.5915rem;
   white-space: nowrap;
 }
 .char-select-screen .vs-row .char-tagline {
   font-size: 0.5915rem;
 }
-.char-select-screen .vs-row .char-tagline-secondary {
+.char-select-screen .vs-row .char-tagline-secondary,
+.char-select-screen .vs-row .char-taunt {
   font-size: 0.546rem;
 }
 .char-select-screen .vs-row .char-placeholder {
@@ -1077,17 +1108,14 @@ body {
   color: var(--neon-cyan);
   line-height: 1.7;
 }
-.char-select-screen .char-tagline-secondary {
+.char-select-screen .char-tagline-secondary,
+.char-select-screen .char-taunt {
   font-size: 0.42rem;
   margin-top: 0.38rem;
   color: var(--neon-cyan);
   line-height: 1.75;
 }
 .char-select-screen .char-taunt {
-  font-size: 0.455rem;
-  margin-top: 0.45rem;
-  color: var(--neon-cyan);
-  line-height: 1.7;
   max-width: 260px;
   margin-left: auto;
   margin-right: auto;
@@ -1555,6 +1583,155 @@ body {
 .bar-fill.high { background: linear-gradient(90deg, #0a0, #4f4); }
 .bar-fill.mid { background: linear-gradient(90deg, #a60, #fc4); }
 .bar-fill.low { background: linear-gradient(90deg, #800, #f44); }
+.bar-fill.low.pulse { animation: hpPulse 0.6s ease-in-out infinite; }
+.bar-wrap.enemy-bar { direction: rtl; }
+.bar-wrap.enemy-bar .bar-fill { direction: ltr; float: right; }
+@keyframes hpPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+.rage-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 240px;
+  margin-top: 2px;
+}
+.hud-side.right .rage-row { flex-direction: row-reverse; margin-left: auto; }
+.rage-label {
+  font-size: 6px;
+  color: #ff8800;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+}
+.rage-wrap {
+  flex: 1;
+  height: 8px;
+  border: 1px solid #664400;
+  background: #1a0a00;
+  position: relative;
+  overflow: hidden;
+}
+.rage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #662200, #ff8800);
+  transition: width 0.1s linear;
+}
+.rage-fill.ready {
+  background: linear-gradient(90deg, #ff6600, #ffff88);
+  animation: ragePulse 0.5s ease-in-out infinite;
+}
+.rage-bolt {
+  font-size: 8px;
+  color: #ffff00;
+  animation: ragePulse 0.4s ease-in-out infinite;
+}
+@keyframes ragePulse {
+  0%, 100% { filter: brightness(1); box-shadow: none; }
+  50% { filter: brightness(1.5); box-shadow: 0 0 6px #ff8800; }
+}
+.timer-value.warn { color: #ff8800; }
+.timer-value.critical {
+  color: #ff2222;
+  animation: timerTick 0.5s ease-in-out infinite;
+}
+.fight-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.fight-particles-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.announcer-text {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  font-family: 'Press Start 2P', monospace;
+  font-weight: bold;
+  z-index: 30;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.announcer-zoom {
+  animation: announcerZoom 0.6s ease-out forwards;
+}
+.announcer-slam {
+  animation: announcerSlam 0.4s ease-out forwards;
+}
+@keyframes announcerZoom {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  60% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes announcerSlam {
+  0% { transform: translate(-50%, -80%) scale(1.5); opacity: 0; }
+  50% { transform: translate(-50%, -45%) scale(0.95); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+.combo-display {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  text-align: center;
+  z-index: 28;
+  pointer-events: none;
+}
+.combo-number {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1.5rem, 6vw, 3rem);
+  color: #ffff00;
+  text-shadow: 3px 3px 0 #ff4400, -1px -1px 0 #000;
+}
+.combo-label {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.5rem, 2vw, 0.8rem);
+  color: #ff8800;
+  text-shadow: 2px 2px 0 #000;
+  margin-top: 4px;
+}
+.get-up-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 28%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.6rem, 2.5vw, 0.9rem);
+  color: #ffff00;
+  text-shadow: 2px 2px 0 #ff0000;
+  animation: timerTick 0.4s ease-in-out infinite;
+  z-index: 28;
+}
+.super-flash-white {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0.85;
+  z-index: 35;
+  pointer-events: none;
+}
+.go-winner-sub {
+  font-size: 10px;
+  color: #ccc;
+  margin: 8px 0;
+  text-align: center;
+}
+.go-btn-menu {
+  border-color: #888;
+  color: #aaa;
+}
+.gameover-dim .gameover-scrim {
+  background: rgba(0, 0, 0, 0.55);
+}
 .pips {
   display: flex;
   gap: 4px;
@@ -2480,8 +2657,17 @@ body.fight-active {
 
 function hpBarClass(ratio) {
   if (ratio > 0.5) return 'high'
-  if (ratio > 0.25) return 'mid'
-  return 'low'
+  if (ratio > 0.2) return 'mid'
+  return 'low pulse'
+}
+
+function applyHpBarClass(el, ratio) {
+  if (!el) return
+  const next = hpBarClass(ratio)
+  if (el.dataset.hpClass !== next) {
+    el.dataset.hpClass = next
+    el.className = `bar-fill ${next}`
+  }
 }
 
 export default function App() {
@@ -2494,6 +2680,8 @@ export default function App() {
   const [goScore, setGoScore] = useState(0)
   const [playerFighterState, setPlayerFighterState] = useState('IDLE')
   const [enemyFighterState, setEnemyFighterState] = useState('IDLE')
+  const [playerFlipped, setPlayerFlipped] = useState(false)
+  const [enemyFlipped, setEnemyFlipped] = useState(false)
   const [playerFighterHeight, setPlayerFighterHeight] = useState(200)
   const [enemyFighterHeight, setEnemyFighterHeight] = useState(200)
   const [fateRolling, setFateRolling] = useState(false)
@@ -2525,13 +2713,46 @@ export default function App() {
     player: { state: 'IDLE', until: 0, locked: false },
     enemy: { state: 'IDLE', until: 0, locked: false },
   })
+  const systemsRef = useRef(null)
+  const hudDomRef = useRef({})
+
+  const updateFightHudDom = useCallback((f) => {
+    if (!f) return
+    const el = hudDomRef.current
+    if (el.timer) {
+      el.timer.textContent = String(Math.ceil(f.timeLeft)).padStart(2, '0')
+      el.timer.classList.toggle('critical', f.timeLeft <= 10)
+      el.timer.classList.toggle('warn', f.timeLeft > 10 && f.timeLeft <= 30)
+    }
+    if (el.phpBar) {
+      el.phpBar.style.width = `${(f.php / f.pmax) * 100}%`
+      applyHpBarClass(el.phpBar, f.php / f.pmax)
+    }
+    if (el.ehpBar) {
+      el.ehpBar.style.width = `${(f.ehp / f.emax) * 100}%`
+      applyHpBarClass(el.ehpBar, f.ehp / f.emax)
+    }
+    if (el.playerRage) {
+      el.playerRage.style.width = `${f.playerRage || 0}%`
+      el.playerRage.classList.toggle('ready', Boolean(f.playerRageReady))
+    }
+    if (el.enemyRage) {
+      el.enemyRage.style.width = `${f.enemyRage || 0}%`
+      el.enemyRage.classList.toggle('ready', Boolean(f.enemyRageReady))
+    }
+    if (el.playerRageBolt) el.playerRageBolt.hidden = !f.playerRageReady
+    if (el.enemyRageBolt) el.enemyRageBolt.hidden = !f.enemyRageReady
+  }, [])
 
   const bumpHud = useCallback(() => setHudTick((t) => t + 1), [])
   const screenRef = useRef(screen)
   screenRef.current = screen
 
   useEffect(() => {
-    const fightKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyJ', 'KeyK', 'KeyL', 'KeyI']
+    const fightKeys = [
+      'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+      'KeyJ', 'KeyK', 'KeyL', 'KeyI', 'KeyQ', 'KeyT',
+    ]
     const kd = (e) => {
       if (fightKeys.includes(e.code) && screenRef.current === 'fight') {
         e.preventDefault()
@@ -2589,6 +2810,26 @@ export default function App() {
     setStageFatePreviewId(null)
   }, [])
 
+  const initFightSession = useCallback((opponentId, stageId) => {
+    const fightState = createFightState(opponentId, stageId)
+    fightState.aiDifficulty = 'medium'
+    fightRef.current = fightState
+    systemsRef.current = new GameSystemsManager('medium')
+    systemsRef.current.startMatch(performance.now(), 1)
+    fightState.roundActive = false
+    fightState._lastRoundPhase = null
+    fightState._startPositionsReady = false
+    fightState._uiPlayerFlipped = false
+    fightState._uiEnemyFlipped = true
+    animRef.current.player = { state: 'IDLE', until: 0, locked: false }
+    animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
+    setPlayerFighterState('IDLE')
+    setEnemyFighterState('IDLE')
+    setPlayerFlipped(false)
+    setEnemyFlipped(true)
+    return fightState
+  }, [])
+
   const startStageFateDecide = useCallback(() => {
     if (stageFateRolling || !selectedEnemyId) return
     const finalIndex = Math.floor(Math.random() * STAGES.length)
@@ -2612,11 +2853,7 @@ export default function App() {
           const enemyId = selectedEnemyIdRef.current
           if (!enemyId) return
           setSelectedStageId(finalId)
-          fightRef.current = createFightState(enemyId, finalId)
-          animRef.current.player = { state: 'IDLE', until: 0, locked: false }
-          animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
-          setPlayerFighterState('IDLE')
-          setEnemyFighterState('IDLE')
+          initFightSession(enemyId, finalId)
           setScreen('fight')
           bumpHud()
         }, 200)
@@ -2629,7 +2866,7 @@ export default function App() {
     }
 
     stageFateTimerRef.current = window.setTimeout(runStep, 40)
-  }, [stageFateRolling, bumpHud])
+  }, [stageFateRolling, bumpHud, initFightSession])
 
   const startFateDecide = useCallback((options = {}) => {
     if (fateRolling || mobileAdvancing) return
@@ -2728,15 +2965,10 @@ export default function App() {
   const startFight = (stageId) => {
     if (!selectedEnemyId || !stageId) return
     setSelectedStageId(stageId)
-    fightRef.current = createFightState(selectedEnemyId, stageId)
-    animRef.current.player = { state: 'IDLE', until: 0, locked: false }
-    animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
-    setPlayerFighterState('IDLE')
-    setEnemyFighterState('IDLE')
+    initFightSession(selectedEnemyId, stageId)
     setScreen('fight')
     bumpHud()
   }
-
 
   useEffect(() => {
     if (screen !== 'fight' || !fightRef.current) return
@@ -2745,10 +2977,31 @@ export default function App() {
     const playerDef = getFighterById(fr.playerId)
     const enemyDef = getFighterById(fr.enemyId)
 
+    if (!systemsRef.current) {
+      systemsRef.current = new GameSystemsManager(fr.aiDifficulty || 'medium')
+      systemsRef.current.startMatch(performance.now(), fr.round || 1)
+    }
+    const systems = systemsRef.current
+    const startPositions = systems.rounds.startPositions
+
+    const applyFighterDomPositions = (f) => {
+      const ground = f.groundBottomPercent || '18%'
+      if (playerWrapRef.current) {
+        playerWrapRef.current.style.left = `${Math.round(f.px)}px`
+        playerWrapRef.current.style.bottom = `calc(${ground} + ${Math.round(f.py)}px)`
+      }
+      if (enemyWrapRef.current) {
+        enemyWrapRef.current.style.left = `${Math.round(f.ex)}px`
+        enemyWrapRef.current.style.bottom = `calc(${ground} + ${Math.round(f.ey)}px)`
+      }
+    }
+
     const syncSize = () => {
       const el = arenaRef.current
-      if (!el) return
+      if (!el) return false
       const r = el.getBoundingClientRect()
+      if (r.width < 50 || r.height < 50) return false
+      const prevW = fr.arenaW
       fr.arenaW = r.width
       fr.arenaH = r.height
       fr.groundBottomPercent = STAGE_GROUND_BOTTOM[fr.stageId] || '18%'
@@ -2756,44 +3009,58 @@ export default function App() {
       Object.assign(fr, sizes)
       setPlayerFighterHeight(fr.playerFighterHeight)
       setEnemyFighterHeight(fr.enemyFighterHeight)
+      if (!fr._startPositionsReady || Math.abs(prevW - r.width) > 30) {
+        if (!fr.roundActive || !systems.rounds.isFighting()) {
+          snapFightersToStart(fr, startPositions)
+        } else if (prevW > 50) {
+          const ratio = r.width / prevW
+          fr.px *= ratio
+          fr.ex *= ratio
+        }
+        fr._startPositionsReady = true
+        applyFighterDomPositions(fr)
+      }
+      return true
     }
     syncSize()
     const onViewportChange = () => syncSize()
     window.addEventListener('resize', onViewportChange)
     window.addEventListener('orientationchange', onViewportChange)
-    fr.px = fr.arenaW * 0.22
-    fr.ex = fr.arenaW * 0.62
-
-    timerRef.current = window.setInterval(() => {
-      const f = fightRef.current
-      if (!f || !f.roundActive || f.matchOver) return
-      if (f.timeLeft > 0) {
-        f.timeLeft -= 1
-        if (f.timeLeft <= 0) {
-          f.roundActive = false
-          if (f.php >= f.ehp) {
-            f.pw += 1
-            f.score += 900
-            setFighterState('player', 'WIN', true)
-            setFighterState('enemy', 'KO', true)
-          } else {
-            f.ew += 1
-            setFighterState('enemy', 'WIN', true)
-            announceEnemyWin()
-            setFighterState('player', 'KO', true)
-          }
-          f.roundEndAt = performance.now() + 2200
-          if (f.pw >= 2) {
-            f.matchOver = true
-            f.matchWinner = 'player'
-          } else if (f.ew >= 2) {
-            f.matchOver = true
-            f.matchWinner = 'enemy'
-          }
+    if (!snapFightersToStart(fr, startPositions)) {
+      requestAnimationFrame(() => {
+        if (syncSize()) {
+          snapFightersToStart(fr, startPositions)
+          applyFighterDomPositions(fr)
         }
-      }
+      })
+    } else {
+      applyFighterDomPositions(fr)
+    }
+
+    const syncFightHud = (now, sys) => {
+      if (!sys) return
+      fr.playerRage = sys.superMeter.playerMeter
+      fr.enemyRage = sys.superMeter.enemyMeter
+      fr.playerRageReady = sys.superMeter.isFull('player')
+      fr.enemyRageReady = sys.superMeter.isFull('enemy')
+      updateFightHudDom(fr)
+    }
+
+    const resetFightersStanding = () => {
+      animRef.current.player = { state: 'IDLE', until: 0, locked: false }
+      animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
+      setPlayerFighterState('IDLE')
+      setEnemyFighterState('IDLE')
+      fr.hurtSpark = null
+      fr.superDash = null
+      systems.knockdown.resetRound()
+      snapFightersToStart(fr, startPositions)
+      applyFighterDomPositions(fr)
+      updateFightHudDom(fr)
       bumpHud()
-    }, 1000)
+    }
+
+    fr._lastRoundPhase = fr._lastRoundPhase ?? systems.rounds.phase
 
     const keysDown = () => keysRef.current
     const pressedDown = () => pressRef.current
@@ -2803,6 +3070,8 @@ export default function App() {
 
     const canInterruptState = (meta, nowTs) => {
       if (meta.state === 'KO' || meta.state === 'WIN') return false
+      if (meta.state === 'KNOCKDOWN' && nowTs < meta.until) return false
+      if (meta.state === 'TAUNT' && nowTs < meta.until) return false
       if (meta.state === 'HURT' && nowTs < meta.until) return false
       if (ATTACK_STATES.includes(meta.state) && nowTs < meta.until) return false
       return true
@@ -2813,16 +3082,17 @@ export default function App() {
       const meta = animRef.current[side]
       const characterId = side === 'player' ? fr.playerId : fr.enemyId
       const stateConfig = getStateConfig(characterId, nextState)
-      if (meta.state === 'KO' && nextState !== 'KO') return false
+      if (!force && meta.state === 'KO' && nextState !== 'KO') return false
+      if (!force && meta.state === 'WIN' && nextState !== 'WIN') return false
+      if (!force && meta.state === nextState) return true
       if (!force && !canInterruptState(meta, nowTs)) return false
-      if (meta.state === nextState && stateConfig.loop) return true
       meta.state = nextState
       const dur = stateConfig.duration
       meta.until = dur ? nowTs + dur : 0
       meta.locked = nextState === 'KO'
       if (nextState === 'KO') {
-        if (side === 'player') f.py = 0
-        else f.ey = 0
+        if (side === 'player') fr.py = 0
+        else fr.ey = 0
       }
       if (side === 'player') setPlayerFighterState(nextState)
       else setEnemyFighterState(nextState)
@@ -2848,12 +3118,10 @@ export default function App() {
     }
 
     const screenShake = () => {
-      fr.shakeUntil = performance.now() + 320
-      if (arenaShakeRef.current) arenaShakeRef.current.classList.add('shake')
+      systems.hitFreeze.requestShake('light')
     }
     const screenShakeLong = () => {
-      fr.shakeUntil = performance.now() + 600
-      if (arenaShakeRef.current) arenaShakeRef.current.classList.add('shake')
+      systems.hitFreeze.requestShake('heavy')
     }
     const flashHit = () => {
       fr.flashUntil = performance.now() + 100
@@ -2933,6 +3201,41 @@ export default function App() {
       }, 900)
     }
 
+    timerRef.current = window.setInterval(() => {
+      const f = fightRef.current
+      const sys = systemsRef.current
+      if (!f || !f.roundActive || f.matchOver || !sys?.rounds.isFighting()) return
+      if (f.timeLeft > 0) {
+        f.timeLeft -= 1
+        if (f.timeLeft <= 0) {
+          let winner = null
+          if (f.php > f.ehp) winner = 'player'
+          else if (f.ehp > f.php) winner = 'enemy'
+          if (!winner) {
+            sys.onRoundEnd(null, 'timeout', f, performance.now())
+            f.php = playerDef.hp
+            f.ehp = enemyDef.hp
+            f.timeLeft = ROUND_TIME
+            bumpHud()
+            return
+          }
+          f.roundWinnerSide = winner
+          if (winner === 'player') {
+            setFighterState('player', 'WIN', true)
+            setFighterState('enemy', 'KO', true)
+          } else {
+            setFighterState('enemy', 'WIN', true)
+            announceEnemyWin()
+            setFighterState('player', 'KO', true)
+          }
+          sys.onKO(winner)
+          sys.onRoundEnd(winner, 'timeout', f, performance.now())
+          f.roundEndAt = performance.now() + 5200
+        }
+      }
+      updateFightHudDom(f)
+    }, 1000)
+
     const addHitSpark = (x, y) => {
       const id = `spark-${fr.dnId++}`
       fr.damageNumbers.push({ id, x, y, spark: true, val: '✨💥' })
@@ -2961,91 +3264,151 @@ export default function App() {
       window.setTimeout(() => bumpHud(), 65)
     }
 
-    const tryDamageEnemy = (type, range, isSpecial) => {
-      if (fr.enemyInvuln > performance.now()) return
+    const tryDamageEnemy = (type, range, isSpecial, hitOpts = {}) => {
+      const sys = systemsRef.current
+      if (!sys) return
+      if (fr.enemyInvuln > performance.now() || sys.knockdown.isInvulnerable('enemy')) return
+      if (!sys.knockdown.canAttackDownedOpponent('player')) return
       const dist = horizontalDist()
       if (dist > range + HITBOX_PAD) return
       const now = performance.now()
-      if (now - fr.lastHitOnEnemy < COMBO_WINDOW_MS) {
-        fr.playerCombo += 1
-      } else {
-        fr.playerCombo = 1
+      const isSuper = hitOpts.isSuper || false
+      const blocked = fr.enemyBlocking
+
+      let raw = isSuper ? fr.emax * 0.4 : rollDamage(playerDef.atk, isSpecial)
+      if (sys.taunts.isTaunting('enemy')) raw *= 1.5
+
+      const hitX = fr.ex + enemySpriteW() / 2
+      const hitY = fr.arenaH * 0.42
+
+      if (blocked) {
+        sys.onBlock({
+          attacker: 'player', defender: 'enemy', damage: raw, attackType: type,
+          isSpecial, x: hitX, y: hitY, now, fightState: fr,
+          defenderMaxHp: fr.emax, defenderHp: fr.ehp, defenderHpAfter: fr.ehp,
+        })
+        fr.ehp = Math.max(0, fr.ehp - raw * 0.4)
+        setFighterState('enemy', 'DODGE', true)
+        bumpHud()
+        return
       }
-      fr.lastHitOnEnemy = now
-      let mult = 1
-      if (fr.playerCombo >= COMBO_MIN_HITS) {
-        mult = COMBO_MULT
-        fr.comboBonusHits += 1
-        fr.score += 200
-        fr.battleMsg = `${fr.playerCombo}x COMBO!`
-        fr.battleMsgUntil = now + 900
-      }
-      const raw = rollDamage(playerDef.atk, isSpecial)
-      const dmg = raw * mult
+
+      const result = sys.onHit({
+        attacker: 'player', defender: 'enemy', damage: raw, attackType: type,
+        isSpecial, isSuper, isKO: false, blocked: false,
+        x: hitX, y: hitY, now, fightState: fr,
+        defenderMaxHp: fr.emax, defenderHp: fr.ehp,
+        defenderHpAfter: Math.max(0, fr.ehp - raw),
+        isCounter: hitOpts.isCounter, isPunish: hitOpts.isPunish,
+      })
+
+      const dmg = result.damage
       fr.ehp = Math.max(0, fr.ehp - dmg)
-      if (isSpecial) {
-        fr.battleMsg = playerDef.special
-        fr.battleMsgUntil = now + 900
+      sys.rounds.trackDamage('enemy', dmg)
+      fr.roundDamageTakenEnemy += dmg
+
+      if (result.knockedDown) {
+        setFighterState('enemy', 'KNOCKDOWN', true)
+      } else {
+        setFighterState('enemy', 'HURT', true)
       }
-      setFighterState('enemy', 'HURT', true)
       fr.hurtSpark = { x: fr.ex + 88, y: fr.arenaH * 0.38, until: performance.now() + 250 }
       fr.enemyInvuln = performance.now() + 220
-      screenShake()
       flashHit()
       flashFighter('enemy')
       addDamageNumber(fr.ex + 30, fr.arenaH * 0.42, dmg, '#ff6')
       addHitSpark(fr.ex + 70, fr.arenaH * 0.45)
       playSound('hit')
+      updateFightHudDom(fr)
+      if (isSpecial && !isSuper) {
+        fr.battleMsg = playerDef.special
+        fr.battleMsgUntil = now + 900
+      }
       if (fr.ehp <= 0) {
-        fr.roundActive = false
-        fr.pw += 1
-        fr.score += 900
-        fr.roundEndAt = performance.now() + 2200
+        sys.onHit({
+          attacker: 'player', defender: 'enemy', damage: 0, attackType: type,
+          isKO: true, x: hitX, y: hitY, now, fightState: fr,
+          defenderMaxHp: fr.emax, defenderHp: 0, defenderHpAfter: 0,
+        })
+        fr.roundWinnerSide = 'player'
+        sys.onKO('player')
+        sys.onRoundEnd('player', 'ko', fr, now)
+        fr.roundEndAt = performance.now() + 5200
         setFighterState('player', 'WIN', true)
         setFighterState('enemy', 'KO', true)
-        if (fr.pw >= 2) {
-          fr.matchOver = true
-          fr.matchWinner = 'player'
-        }
       }
       bumpHud()
     }
 
-    const tryDamagePlayer = (type, range, isSpecial, pushback = false) => {
-      if (fr.playerInvuln > performance.now()) return
+    const tryDamagePlayer = (type, range, isSpecial, pushback = false, hitOpts = {}) => {
+      const sys = systemsRef.current
+      if (!sys) return
+      if (fr.playerInvuln > performance.now() || sys.knockdown.isInvulnerable('player')) return
+      if (!sys.knockdown.canAttackDownedOpponent('enemy')) return
       const dist = horizontalDist()
       if (dist > range + HITBOX_PAD) return
       const now = performance.now()
-      if (now - fr.lastHitOnPlayer < COMBO_WINDOW_MS) fr.enemyCombo += 1
-      else fr.enemyCombo = 1
-      fr.lastHitOnPlayer = now
-      const mult = fr.enemyCombo >= COMBO_MIN_HITS ? COMBO_MULT : 1
-      const raw = rollDamage(enemyDef.atk, isSpecial)
-      let dmg = raw * mult
-      if (fr.playerBlocking) dmg *= 0.4
-      fr.php = Math.max(0, fr.php - dmg)
-      if (pushback) {
-        fr.pvx = (fr.ex < fr.px ? 1 : -1) * 8
+      const isSuper = hitOpts.isSuper || false
+      const blocked = fr.playerBlocking
+
+      let raw = isSuper ? fr.pmax * 0.4 : rollDamage(enemyDef.atk, isSpecial)
+      if (sys.taunts.isTaunting('player')) raw *= 1.5
+
+      const hitX = fr.px + playerSpriteW() / 2
+      const hitY = fr.arenaH * 0.42
+
+      if (blocked) {
+        sys.onBlock({
+          attacker: 'enemy', defender: 'player', damage: raw, attackType: type,
+          isSpecial, x: hitX, y: hitY, now, fightState: fr,
+          defenderMaxHp: fr.pmax, defenderHp: fr.php, defenderHpAfter: fr.php,
+        })
+        fr.php = Math.max(0, fr.php - raw * 0.4)
+        bumpHud()
+        return
       }
-      setFighterState('player', 'HURT', true)
+
+      const result = sys.onHit({
+        attacker: 'enemy', defender: 'player', damage: raw, attackType: type,
+        isSpecial, isSuper, isKO: false, blocked: false,
+        x: hitX, y: hitY, now, fightState: fr,
+        defenderMaxHp: fr.pmax, defenderHp: fr.php,
+        defenderHpAfter: Math.max(0, fr.php - raw),
+        isCounter: hitOpts.isCounter, isPunish: hitOpts.isPunish,
+      })
+
+      const dmg = result.damage
+      fr.php = Math.max(0, fr.php - dmg)
+      sys.rounds.trackDamage('player', dmg)
+      fr.roundDamageTakenPlayer += dmg
+      if (pushback) fr.pvx = (fr.ex < fr.px ? 1 : -1) * 8
+
+      if (result.knockedDown) {
+        setFighterState('player', 'KNOCKDOWN', true)
+        sys.announcer.onGetUp()
+      } else {
+        setFighterState('player', 'HURT', true)
+      }
       fr.playerInvuln = performance.now() + 220
-      screenShake()
       flashHit()
       flashFighter('player')
       addDamageNumber(fr.px + 20, fr.arenaH * 0.42, dmg, '#f88')
       addHitSpark(fr.px + 70, fr.arenaH * 0.45)
       playSound('hit')
+      updateFightHudDom(fr)
       if (fr.php <= 0) {
-        fr.roundActive = false
-        fr.ew += 1
-        fr.roundEndAt = performance.now() + 2200
+        sys.onHit({
+          attacker: 'enemy', defender: 'player', damage: 0, attackType: type,
+          isKO: true, x: hitX, y: hitY, now, fightState: fr,
+          defenderMaxHp: fr.pmax, defenderHp: 0, defenderHpAfter: 0,
+        })
+        fr.roundWinnerSide = 'enemy'
+        sys.onKO('enemy')
+        sys.onRoundEnd('enemy', 'ko', fr, now)
+        fr.roundEndAt = performance.now() + 5200
         setFighterState('enemy', 'WIN', true)
         triggerPlayerKoSequence(performance.now())
         setFighterState('player', 'KO', true)
-        if (fr.ew >= 2) {
-          fr.matchOver = true
-          fr.matchWinner = 'enemy'
-        }
       }
       bumpHud()
     }
@@ -3054,14 +3417,58 @@ export default function App() {
 
     const loop = (now) => {
       const f = fightRef.current
+      const sys = systemsRef.current
       if (!f || screen !== 'fight') return
+
+      if (sys?.shouldFreezeFrame()) {
+        const shake = sys.getShakeOffset()
+        if (arenaShakeRef.current) {
+          arenaShakeRef.current.style.transform = `translate(${shake.x}px, ${shake.y}px)`
+        }
+        rafRef.current = requestAnimationFrame(loop)
+        return
+      }
+
+      const dt = Math.min(32, now - last)
+      last = now
+      const timeScale = sys?.superMeter.getTimeScale(now) ?? 1
+      const scaledDt = dt * timeScale
 
       tickFighterState('player', now)
       tickFighterState('enemy', now)
 
-      if (f.shakeUntil < now && arenaShakeRef.current) {
-        arenaShakeRef.current.classList.remove('shake')
+      if (sys) {
+        sys.tick(now, f, scaledDt)
+        if (f._lastRoundPhase !== sys.rounds.phase) {
+          const phase = sys.rounds.phase
+          if (
+            phase === ROUND_PHASE.WALKBACK
+            || phase === ROUND_PHASE.INTRO
+            || phase === ROUND_PHASE.FIGHTING
+          ) {
+            resetFightersStanding()
+          }
+          f._lastRoundPhase = phase
+        }
+        syncFightHud(now, sys)
+        sys.pushback.tick(f, playerSpriteW(), enemySpriteW(), scaledDt)
+        if (f._wasPlayerDown && !sys.knockdown.isDown('player')) {
+          setFighterState('player', 'IDLE', true)
+        }
+        if (f._wasEnemyDown && !sys.knockdown.isDown('enemy')) {
+          setFighterState('enemy', 'IDLE', true)
+        }
+        f._wasPlayerDown = sys.knockdown.isDown('player')
+        f._wasEnemyDown = sys.knockdown.isDown('enemy')
       }
+
+      const shake = sys?.getShakeOffset() ?? { x: 0, y: 0 }
+      if (arenaShakeRef.current) {
+        arenaShakeRef.current.style.transform = shake.x || shake.y
+          ? `translate(${shake.x}px, ${shake.y}px)`
+          : ''
+      }
+
       if (f.flashUntil < now && flashRef.current) {
         flashRef.current.classList.remove('on')
         flashRef.current.classList.remove('hit')
@@ -3073,37 +3480,18 @@ export default function App() {
       }
 
       if (f.matchOver && f.matchWinner && now > f.roundEndAt) {
+        const flawless = f.matchWinner === 'player'
+          ? sys?.victory.stats.playerDamageTaken === 0
+          : sys?.victory.stats.enemyDamageTaken === 0
+        sys?.onMatchEnd(f.matchWinner, flawless)
         setMatchWinner(f.matchWinner)
         setGoScore(f.score)
         setScreen('gameOver')
         return
       }
 
-      if (!f.roundActive) {
-        if (now > f.roundEndAt && !f.matchOver) {
-          f.round += 1
-          f.php = playerDef.hp
-          f.pmax = playerDef.hp
-          f.ehp = enemyDef.hp
-          f.emax = enemyDef.hp
-          f.timeLeft = ROUND_TIME
-          f.roundActive = true
-          f.px = f.arenaW * 0.22
-          f.ex = f.arenaW * 0.62
-          f.py = f.ey = 0
-          f.pvx = f.pvy = f.evx = f.evy = 0
-          f.playerCombo = f.enemyCombo = 0
-          f.enemyCharging = false
-          f.enemyChargeUntil = 0
-          f.playerCharging = false
-          f.playerChargeUntil = 0
-          f.playerBlocking = false
-          f.hurtSpark = null
-          animRef.current.player = { state: 'IDLE', until: 0, locked: false }
-          animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
-          setPlayerFighterState('IDLE')
-          setEnemyFighterState('IDLE')
-        }
+      if (!f.roundActive || (sys && !sys.rounds.isFighting())) {
+        if (sys) sys.updateWalkback(f, scaledDt)
         const ground = f.groundBottomPercent || '18%'
         if (playerWrapRef.current) {
           playerWrapRef.current.style.left = `${Math.round(f.px)}px`
@@ -3113,13 +3501,11 @@ export default function App() {
           enemyWrapRef.current.style.left = `${Math.round(f.ex)}px`
           enemyWrapRef.current.style.bottom = `calc(${ground} + ${Math.round(f.ey)}px)`
         }
-        bumpHud()
+        syncFightHud(now, sys)
         rafRef.current = requestAnimationFrame(loop)
         return
       }
 
-      const dt = Math.min(32, now - last)
-      last = now
       const k = keysDown()
 
       const onGroundP = f.py <= 0.5
@@ -3132,7 +3518,7 @@ export default function App() {
         f.pvx = 0
       }
 
-      if (f.playerAttackLock < now && !blocking) {
+      if (f.playerAttackLock < now && !blocking && !sys?.knockdown.isDown('player') && !sys?.taunts.isTaunting('player')) {
         const pressed = pressedDown()
         if (pressed.has('KeyJ')) {
           if (setFighterState('player', 'PUNCH')) {
@@ -3154,6 +3540,23 @@ export default function App() {
             scheduleAttack(f, 'player', fr.playerId, 'FLYKICK', now)
           }
         }
+        if (pressed.has('KeyQ') && sys?.superMeter.canActivate('player')) {
+          const superResult = sys.trySuper('player', f.pmax, now)
+          if (superResult.activated) {
+            if (setFighterState('player', 'SUPER')) {
+              scheduleAttack(f, 'player', fr.playerId, 'SUPER', now)
+              f.superDash = { side: 'player', until: now + 600, hitDone: false }
+              flashRef.current?.classList.add('on')
+              if (flashRef.current) flashRef.current.style.background = '#fff'
+              f.flashUntil = now + 32
+            }
+          }
+        }
+        if (pressed.has('KeyT') && sys?.taunts.canTaunt('player', now, f.playerAttackLock)) {
+          if (setFighterState('player', 'TAUNT')) {
+            sys.taunts.startTaunt('player', now)
+          }
+        }
         if (pressed.has('ArrowUp') && onGroundP) {
           f.pvy = JUMP_VEL
           f.py = 1
@@ -3164,18 +3567,33 @@ export default function App() {
           }
         }
       }
+      const mashed = pressedDown()
       pressRef.current.clear()
+
+      if (sys?.knockdown.isDown('player')) {
+        if (mashed.size > 0) sys.knockdown.registerMash('player')
+      }
+
+      if (f.superDash && now < f.superDash.until) {
+        const dir = Math.sign(f.ex - f.px) || 1
+        f.px += dir * 14 * (scaledDt / 16)
+        f.px = Math.max(8, Math.min(f.arenaW - playerSpriteW() - 8, f.px))
+      } else if (f.superDash?.side === 'player') {
+        f.superDash = null
+      }
 
       if (f.pendingPlayerHit && now >= f.pendingPlayerHit.t) {
         const h = f.pendingPlayerHit
         f.pendingPlayerHit = null
-        tryDamageEnemy(h.type, h.range, h.sp)
+        const isSuper = h.type === 'super'
+        tryDamageEnemy(h.type, h.range, h.sp, { isSuper })
       }
 
       if (f.pendingEnemyHit && now >= f.pendingEnemyHit.t) {
         const h = f.pendingEnemyHit
         f.pendingEnemyHit = null
-        tryDamagePlayer(h.type, h.range, h.sp, false)
+        const isSuper = h.type === 'super'
+        tryDamagePlayer(h.type, h.range, h.sp, false, { isSuper })
       }
 
       if (f.playerCharging && now < f.playerChargeUntil) {
@@ -3209,13 +3627,13 @@ export default function App() {
       let walkP = false
       if (!blocking && !f.playerCharging) {
         if (k.has('ArrowLeft')) {
-          f.pvx = -5
+          f.pvx = -MOVE_SPEED
           walkP = onGroundP
         } else if (k.has('ArrowRight')) {
-          f.pvx = 5
+          f.pvx = MOVE_SPEED
           walkP = onGroundP
         } else {
-          f.pvx *= 0.34
+          f.pvx *= GROUND_FRICTION
           if (Math.abs(f.pvx) < 0.08) f.pvx = 0
         }
       }
@@ -3225,9 +3643,9 @@ export default function App() {
         else if (onGroundP && f.playerAttackLock < now) setFighterState('player', 'IDLE')
       }
 
-      f.pvy -= GRAVITY * (dt / 16)
-      f.py += f.pvy * (dt / 16)
-      f.px += f.pvx * (dt / 16)
+      f.pvy -= GRAVITY * (scaledDt / 16)
+      f.py += f.pvy * (scaledDt / 16)
+      f.px += f.pvx * (scaledDt / 16)
       if (f.py < 0) {
         f.py = 0
         f.pvy = 0
@@ -3238,111 +3656,98 @@ export default function App() {
       const ec = f.ex + enemySpriteW() / 2
       f.playerFacing = ec >= pc ? 1 : -1
       f.enemyFacing = pc >= ec ? 1 : -1
-
-      if (now >= f.aiNextThink) {
-        f.aiNextThink = now + 120 + Math.random() * 100
+      const nextPlayerFlip = f.playerFacing < 0
+      const nextEnemyFlip = f.enemyFacing < 0
+      if (f._uiPlayerFlipped !== nextPlayerFlip) {
+        f._uiPlayerFlipped = nextPlayerFlip
+        setPlayerFlipped(nextPlayerFlip)
       }
-      if (now >= f.aiNextAttack && f.enemyAttackLock < now && f.roundActive) {
-        const hpRatio = f.ehp / f.emax
-        const aiTiming = getAiTiming(fr.enemyId, hpRatio)
-        f.aiNextAttack = now + aiTiming.min + Math.random() * (aiTiming.max - aiTiming.min)
-        const dist = horizontalDist()
+      if (f._uiEnemyFlipped !== nextEnemyFlip) {
+        f._uiEnemyFlipped = nextEnemyFlip
+        setEnemyFlipped(nextEnemyFlip)
+      }
 
-        if (usesDaveAi(fr.enemyId)) {
-          const roll = Math.random()
-          if (dist < 80) {
-            if (roll < 0.4 && setFighterState('enemy', 'PUNCH')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'PUNCH', now)
-            } else if (roll < 0.65 && setFighterState('enemy', 'KICK')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'KICK', now)
-            } else if (setFighterState('enemy', 'FLYKICK')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'FLYKICK', now)
+      const playerMeta = animRef.current.player
+      const enemyMeta = animRef.current.enemy
+      const enemyTerminal = enemyMeta.state === 'KO' || enemyMeta.state === 'WIN'
+      const playerAttacking = ATTACK_STATES.includes(playerMeta.state) && now < playerMeta.until
+      const playerInRecovery = playerMeta.state === 'HURT' && now < playerMeta.until
+      const dist = horizontalDist()
+      const cornered = f.ex < 60 || f.ex > f.arenaW - enemySpriteW() - 60
+
+      if (sys && f.enemyAttackLock < now && !sys.knockdown.isDown('enemy') && !enemyTerminal) {
+        const aiDecision = sys.ai.think(now, {
+          dist,
+          enemyHpRatio: f.ehp / f.emax,
+          playerAttacking,
+          playerInRecovery,
+          playerWhiffed: playerMeta.state !== 'IDLE' && now > playerMeta.until,
+          rageFull: sys.superMeter.isFull('enemy'),
+          cornered,
+          onGround: onGroundE,
+          attackLock: f.enemyAttackLock,
+        })
+
+        if (aiDecision.action === 'block') {
+          f.enemyBlocking = true
+          setFighterState('enemy', 'DODGE')
+          f.evx = 0
+        } else {
+          f.enemyBlocking = false
+        }
+
+        if (aiDecision.action === 'taunt' && sys.taunts.canTaunt('enemy', now, f.enemyAttackLock)) {
+          if (setFighterState('enemy', 'TAUNT')) sys.taunts.startTaunt('enemy', now)
+        } else if (aiDecision.action === 'super' && sys.superMeter.canActivate('enemy')) {
+          const superResult = sys.trySuper('enemy', f.emax, now)
+          if (superResult.activated && setFighterState('enemy', 'SUPER')) {
+            scheduleAttack(f, 'enemy', fr.enemyId, 'SUPER', now)
+            f.superDash = { side: 'enemy', until: now + 600, hitDone: false }
+          }
+        } else if (aiDecision.action === 'attack' && aiDecision.attack) {
+          if (setFighterState('enemy', aiDecision.attack)) {
+            scheduleAttack(f, 'enemy', fr.enemyId, aiDecision.attack, now)
+            if (aiDecision.punish) sys.announcer.onPunish()
+            if (aiDecision.attack === 'SPECIAL') {
+              if (usesDaveAi(fr.enemyId)) triggerBeerBellyBash(now)
+              if (usesKyleAi(fr.enemyId)) triggerRedPillRush(now)
             }
-          } else if (dist <= 150) {
-            if (roll < 0.2 && setFighterState('enemy', 'SPECIAL')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'SPECIAL', now)
-              triggerBeerBellyBash(now)
-            } else if (roll < 0.45 && setFighterState('enemy', 'FLYKICK')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'FLYKICK', now)
-            } else if (roll < 0.65 && setFighterState('enemy', 'KICK')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'KICK', now)
-            } else if (roll < 0.85 && setFighterState('enemy', 'PUNCH')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'PUNCH', now)
+            if (aiDecision.attack === 'PUNCH' || aiDecision.attack === 'KICK') {
+              sys.ai.recordPlayerAttack(aiDecision.attack.toLowerCase())
             }
           }
-        } else if (usesKyleAi(fr.enemyId)) {
-          const roll = Math.random()
-          if (dist > 100) {
-            if (roll < 0.45 && setFighterState('enemy', 'SPECIAL')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'SPECIAL', now)
-              triggerRedPillRush(now)
-            } else if (roll < 0.7 && setFighterState('enemy', 'KICK')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'KICK', now)
-            }
-          } else if (roll < 0.35 && setFighterState('enemy', 'PUNCH')) {
-            scheduleAttack(f, 'enemy', fr.enemyId, 'PUNCH', now)
-          } else if (roll < 0.55 && setFighterState('enemy', 'KICK')) {
-            scheduleAttack(f, 'enemy', fr.enemyId, 'KICK', now)
-          } else if (roll < 0.7 && setFighterState('enemy', 'SPECIAL')) {
-            scheduleAttack(f, 'enemy', fr.enemyId, 'SPECIAL', now)
-            triggerRedPillRush(now)
-          } else {
-            f.evx = f.ex < f.px ? -MOVE_SPEED * 0.9 : MOVE_SPEED * 0.9
-          }
-        } else if (dist < SPECIAL_RANGE + 20 && Math.random() < 0.35) {
-          const r = Math.random()
-          if (r < 0.33) {
-            if (setFighterState('enemy', 'PUNCH')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'PUNCH', now)
-            }
-          } else if (r < 0.66) {
-            if (setFighterState('enemy', 'KICK')) {
-              scheduleAttack(f, 'enemy', fr.enemyId, 'KICK', now)
-            }
-          } else if (setFighterState('enemy', 'SPECIAL')) {
-            scheduleAttack(f, 'enemy', fr.enemyId, 'SPECIAL', now)
-          }
+        } else if (aiDecision.action === 'move') {
+          const toward = f.ex < f.px ? 1 : -1
+          f.evx = toward * aiDecision.direction * MOVE_SPEED * 0.85
+          if (onGroundE) setFighterState('enemy', 'WALK')
+        } else if (aiDecision.action === 'idle') {
+          f.evx *= FRICTION
+          if (Math.abs(f.evx) < 0.15) f.evx = 0
         }
       }
 
-      const dist = Math.abs(f.px - f.ex)
-      if (usesDaveAi(fr.enemyId)) {
-        if (dist > 150) {
+      if (f.superDash?.side === 'enemy' && now < f.superDash.until) {
+        const dir = Math.sign(f.px - f.ex) || -1
+        f.ex += dir * 14 * (scaledDt / 16)
+        f.ex = Math.max(8, Math.min(f.arenaW - enemySpriteW() - 8, f.ex))
+      } else if (f.superDash?.side === 'enemy') {
+        f.superDash = null
+      }
+
+      if (!f.enemyBlocking && !f.enemyCharging && !sys?.knockdown.isDown('enemy') && !enemyTerminal) {
+        const hDist = Math.abs(f.px - f.ex)
+        if (hDist > 160) {
           f.evx = f.ex < f.px ? MOVE_SPEED * 0.85 : -MOVE_SPEED * 0.85
           if (onGroundE) setFighterState('enemy', 'WALK')
-        } else {
+        } else if (hDist < 70 && Math.random() < 0.02) {
+          f.evx = f.ex < f.px ? -MOVE_SPEED * 0.9 : MOVE_SPEED * 0.9
+        } else if (!f.superDash) {
           f.evx *= FRICTION
           if (Math.abs(f.evx) < 0.15) f.evx = 0
-          if (onGroundE) {
-            const enemyAnim = animRef.current.enemy.state
-            if (!ATTACK_STATES.includes(enemyAnim) && enemyAnim !== 'WALK') {
-              setFighterState('enemy', 'IDLE')
-            }
+          if (onGroundE && !ATTACK_STATES.includes(enemyMeta.state)) {
+            setFighterState('enemy', 'IDLE')
           }
         }
-      } else if (usesKyleAi(fr.enemyId)) {
-        if (dist > 160) {
-          f.evx = f.ex < f.px ? MOVE_SPEED * 1.1 : -MOVE_SPEED * 1.1
-          if (onGroundE) setFighterState('enemy', 'WALK')
-        } else if (!f.enemyCharging) {
-          f.evx *= FRICTION
-          if (Math.abs(f.evx) < 0.15) f.evx = 0
-          if (onGroundE) {
-            const enemyAnim = animRef.current.enemy.state
-            if (!ATTACK_STATES.includes(enemyAnim) && enemyAnim !== 'WALK') {
-              setFighterState('enemy', 'IDLE')
-            }
-          }
-        }
-      } else if (dist > 160) {
-        f.evx = f.ex < f.px ? MOVE_SPEED * 0.85 : -MOVE_SPEED * 0.85
-        if (onGroundE) setFighterState('enemy', 'WALK')
-      } else if (dist < 70 && Math.random() < 0.02) {
-        f.evx = f.ex < f.px ? -MOVE_SPEED * 0.9 : MOVE_SPEED * 0.9
-      } else {
-        f.evx *= FRICTION
-        if (Math.abs(f.evx) < 0.15) f.evx = 0
-        if (onGroundE) setFighterState('enemy', 'IDLE')
       }
 
       if (onGroundE && Math.random() < 0.003) {
@@ -3350,9 +3755,9 @@ export default function App() {
         f.ey = 1
       }
 
-      f.evy -= GRAVITY * (dt / 16)
-      f.ey += f.evy * (dt / 16)
-      f.ex += f.evx * (dt / 16)
+      f.evy -= GRAVITY * (scaledDt / 16)
+      f.ey += f.evy * (scaledDt / 16)
+      f.ex += f.evx * (scaledDt / 16)
       if (f.ey < 0) {
         f.ey = 0
         f.evy = 0
@@ -3369,6 +3774,7 @@ export default function App() {
         enemyWrapRef.current.style.bottom = `calc(${ground} + ${Math.round(f.ey)}px)`
       }
 
+      syncFightHud(now, sys)
       rafRef.current = requestAnimationFrame(loop)
     }
 
@@ -3378,8 +3784,11 @@ export default function App() {
       window.removeEventListener('orientationchange', onViewportChange)
       clearInterval(timerRef.current)
       cancelAnimationFrame(rafRef.current)
+      if (screenRef.current !== 'fight') {
+        systemsRef.current = null
+      }
     }
-  }, [screen, bumpHud])
+  }, [screen, bumpHud, updateFightHudDom])
 
   useEffect(() => {
     if (screen === 'fight' || screen === 'gameOver') {
@@ -3736,6 +4145,9 @@ export default function App() {
         const now = performance.now()
         const playerHitFlash = fr.playerHitFlashUntil > now
         const enemyHitFlash = fr.enemyHitFlashUntil > now
+        const timerClass = fr.timeLeft <= 10 ? 'critical' : fr.timeLeft <= 30 ? 'warn' : ''
+        const phpPct = (fr.php / fr.pmax) * 100
+        const ehpPct = (fr.ehp / fr.emax) * 100
         return (
         <div className="fight-arena">
           <FightMusicToggle
@@ -3755,10 +4167,28 @@ export default function App() {
                 />
                 <div className="bar-wrap">
                   <div
+                    ref={(node) => { hudDomRef.current.phpBar = node }}
                     className={`bar-fill ${hpBarClass(fr.php / fr.pmax)}`}
-                    style={{ width: `${(fr.php / fr.pmax) * 100}%` }}
+                    style={{ width: `${phpPct}%` }}
                   />
                 </div>
+              </div>
+              <div className="rage-row">
+                <span className="rage-label">RAGE</span>
+                <div className="rage-wrap">
+                  <div
+                    ref={(node) => { hudDomRef.current.playerRage = node }}
+                    className={`rage-fill ${fr.playerRageReady ? 'ready' : ''}`}
+                    style={{ width: `${fr.playerRage || 0}%` }}
+                  />
+                </div>
+                <span
+                  ref={(node) => { hudDomRef.current.playerRageBolt = node }}
+                  className="rage-bolt"
+                  hidden={!fr.playerRageReady}
+                >
+                  ⚡
+                </span>
               </div>
               <div className="pips">
                 <div className={`pip ${fr.pw > 0 ? 'on' : ''}`} />
@@ -3766,7 +4196,10 @@ export default function App() {
               </div>
             </div>
             <div className="timer-box">
-              <div className={`timer-value ${fr.timeLeft <= 10 ? 'urgent' : ''}`}>
+              <div
+                ref={(node) => { hudDomRef.current.timer = node }}
+                className={`timer-value ${timerClass}`}
+              >
                 {String(Math.ceil(fr.timeLeft)).padStart(2, '0')}
               </div>
               <div className="round-label">ROUND {fr.round}</div>
@@ -3775,10 +4208,11 @@ export default function App() {
             <div className="hud-side right">
               <span style={{ color: enemyDef.color || '#faa' }}>{enemyDef.name}</span>
               <div className="hud-bar-row">
-                <div className="bar-wrap">
+                <div className="bar-wrap enemy-bar">
                   <div
+                    ref={(node) => { hudDomRef.current.ehpBar = node }}
                     className={`bar-fill ${hpBarClass(fr.ehp / fr.emax)}`}
-                    style={{ width: `${(fr.ehp / fr.emax) * 100}%` }}
+                    style={{ width: `${ehpPct}%` }}
                   />
                 </div>
                 <img
@@ -3787,6 +4221,23 @@ export default function App() {
                   alt=""
                   style={{ borderColor: enemyDef.color || '#faa' }}
                 />
+              </div>
+              <div className="rage-row">
+                <span
+                  ref={(node) => { hudDomRef.current.enemyRageBolt = node }}
+                  className="rage-bolt"
+                  hidden={!fr.enemyRageReady}
+                >
+                  ⚡
+                </span>
+                <div className="rage-wrap">
+                  <div
+                    ref={(node) => { hudDomRef.current.enemyRage = node }}
+                    className={`rage-fill ${fr.enemyRageReady ? 'ready' : ''}`}
+                    style={{ width: `${fr.enemyRage || 0}%` }}
+                  />
+                </div>
+                <span className="rage-label">RAGE</span>
               </div>
               <div className="pips">
                 <div className={`pip ${fr.ew > 0 ? 'on' : ''}`} />
@@ -3801,6 +4252,11 @@ export default function App() {
             </div>
             <div className="ground-tint" />
             <div className="hit-flash" ref={flashRef} />
+            <FightOverlay
+              particles={systemsRef.current?.particles}
+              systemsRef={systemsRef}
+              arenaRef={arenaRef}
+            />
 
             {fr.battleMsg && <div className="battle-msg">{fr.battleMsg}</div>}
 
@@ -3823,7 +4279,7 @@ export default function App() {
                 <Fighter
                   character={fr.playerId}
                   state={playerFighterState}
-                  flipped={fr.playerFacing < 0}
+                  flipped={playerFlipped}
                   height={playerFighterHeight}
                   hitFlash={playerHitFlash}
                 />
@@ -3832,7 +4288,7 @@ export default function App() {
                 <Fighter
                   character={fr.enemyId}
                   state={enemyFighterState}
-                  flipped={fr.enemyFacing < 0}
+                  flipped={enemyFlipped}
                   height={enemyFighterHeight}
                   hitFlash={enemyHitFlash}
                 />
@@ -3841,7 +4297,7 @@ export default function App() {
 
             <div className="fight-hint">
               <div>◀▶ MOVE &nbsp; ▲ JUMP &nbsp; ▼ BLOCK</div>
-              <div>J PUNCH &nbsp; K KICK &nbsp; L SPECIAL &nbsp; I FLY</div>
+              <div>J PUNCH &nbsp; K KICK &nbsp; L SPECIAL &nbsp; I FLY &nbsp; Q SUPER &nbsp; T TAUNT</div>
             </div>
           </div>
 
@@ -3857,11 +4313,7 @@ export default function App() {
           score={goScore}
           stageBg={stage.img}
           onRematch={() => {
-            fightRef.current = createFightState(selectedEnemyId, selectedStageId)
-            animRef.current.player = { state: 'IDLE', until: 0, locked: false }
-            animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
-            setPlayerFighterState('IDLE')
-            setEnemyFighterState('IDLE')
+            initFightSession(selectedEnemyId, selectedStageId)
             setMatchWinner(null)
             setScreen('fight')
             bumpHud()
@@ -3869,12 +4321,14 @@ export default function App() {
           onNewFight={() => {
             setMatchWinner(null)
             fightRef.current = null
+            systemsRef.current = null
             animRef.current.player = { state: 'IDLE', until: 0, locked: false }
             animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
             setScreen('charSelect')
             setSelectedEnemyId(null)
             setSelectedStageId(null)
           }}
+          onMainMenu={goTitle}
         />
       )}
       <Analytics />

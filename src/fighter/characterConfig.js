@@ -157,6 +157,30 @@ export const DAVE_STATES = {
     cssAnimation: 'none',
     koClass: 'dave-ko',
   },
+  TAUNT: {
+    pose: 'standby',
+    duration: 1200,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'daveBob 0.8s ease-in-out infinite',
+  },
+  KNOCKDOWN: {
+    pose: 'underattack',
+    duration: 2000,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'daveHurt 0.5s ease-out',
+  },
+  SUPER: {
+    pose: 'flykick',
+    duration: 800,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'daveFlyKick 0.8s ease-out',
+    hitFrame: 350,
+    range: 300,
+    isSpecial: true,
+  },
 }
 
 export const KYLE_STATES = {
@@ -336,6 +360,30 @@ export const DMITRI_STATES = {
     cssAnimation: 'none',
     koClass: 'dmitri-ko',
   },
+  TAUNT: {
+    pose: 'standby',
+    duration: 1200,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'dmitriBob 0.8s ease-in-out infinite',
+  },
+  KNOCKDOWN: {
+    pose: 'standby',
+    duration: 2000,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'dmitriHurt 0.5s ease-out',
+  },
+  SUPER: {
+    pose: 'special',
+    duration: 800,
+    loop: false,
+    interruptible: false,
+    cssAnimation: 'dmitriLunge 0.8s ease-out',
+    hitFrame: 350,
+    range: 300,
+    isSpecial: true,
+  },
 }
 
 export const RAJESH_STATES = {
@@ -506,6 +554,30 @@ const GENERIC_STATES = {
     loop: true,
     interruptible: false,
     cssClass: 'ko-fx',
+  },
+  TAUNT: {
+    pose: 'standby',
+    duration: 1200,
+    loop: false,
+    interruptible: false,
+    cssClass: 'win-fx',
+  },
+  KNOCKDOWN: {
+    pose: 'underattack',
+    duration: 2000,
+    loop: false,
+    interruptible: false,
+    cssClass: 'ko-fx',
+  },
+  SUPER: {
+    pose: 'attack',
+    duration: 800,
+    loop: false,
+    interruptible: false,
+    cssClass: 'special-fx',
+    hitFrame: 350,
+    range: 300,
+    isSpecial: true,
   },
 }
 

@@ -5,11 +5,11 @@ import { isIOS, isStandaloneMode, requestAppFullscreen } from '../utils/fullscre
 
 const MARQUEE_TEXT =
   '⚠️ SIDE EFFECTS: BLACK EYES · BRUISED EGOS · UNEXPECTED LIFE CHOICES' +
-  '\u00a0★\u00a0 NOT RESPONSIBLE FOR IDENTITY CRISES TRIGGERED DURING GAMEPLAY' +
-  '\u00a0★\u00a0 THE EXPATS DIDN\'T STAND A CHANCE' +
-  '\u00a0★\u00a0 INSPIRED BY TRUE EVENTS ON SUKHUMVIT SOI 11' +
-  '\u00a0★\u00a0 NONG NUT DOESN\'T CARE. FIGHT ANYWAY. 👊' +
-  '\u00a0★\u00a0 '
+  '\u00a0·\u00a0 NOT RESPONSIBLE FOR IDENTITY CRISES TRIGGERED DURING GAMEPLAY' +
+  '\u00a0·\u00a0 THE EXPATS DIDN\'T STAND A CHANCE' +
+  '\u00a0·\u00a0 INSPIRED BY TRUE EVENTS ON SUKHUMVIT SOI 11' +
+  '\u00a0·\u00a0 NONG NUT DOESN\'T CARE. FIGHT ANYWAY. 👊' +
+  '\u00a0·\u00a0 '
 
 const CONTROLS = [
   { badges: ['←', '→'], label: 'Move left / right' },
@@ -122,7 +122,7 @@ export default function TitleScreen({ onStart }) {
             <p className={styles.sectionBody}>
               A retro arcade fighter set on the streets of Thailand. You are Nong Nut, the Knockout
               Queen — pick your farang opponent from Dave the Pattaya Geezer, Kyle the Passport Bro,
-              Xiaoming the Tour Boss, Rajesh the Delhi Dynamo, or Dmitri the Phuket Patriarch, then
+              Xiaoming the Tour Boss, Rajesh the Delhi Dynamo, or Dmitri the Walking Open Bar, then
               teach them the hard way.
             </p>
             <p className={styles.sectionBody}>
@@ -183,6 +183,34 @@ export default function TitleScreen({ onStart }) {
                 sawadeeka@ladyboyknockout.xyz
               </a>
             </div>
+
+            <section className={styles.disclaimerBlock} aria-label="Disclaimer">
+              <h3 className={styles.disclaimerHeading}>⚠️ DISCLAIMER</h3>
+              <p className={styles.disclaimerBody}>
+                This game is pure fiction and made with love in Bangkok.
+              </p>
+              <p className={styles.disclaimerBody}>
+                Nong Nut, Dave, Dmitri, Kyle, Rajesh and Xiaoming are fictional characters. Any
+                resemblance to actual people on Sukhumvit Soi 11 is entirely coincidental and also
+                completely intentional in spirit.
+              </p>
+              <p className={styles.disclaimerBody}>
+                No ladyboys, tourists, expats, motorbike drivers or corporate enforcers were harmed
+                in the making of this game.
+              </p>
+              <p className={styles.disclaimerBody}>
+                This game celebrates Bangkok&apos;s gloriously chaotic expat culture with affection,
+                not malice.
+              </p>
+              <p className={styles.disclaimerBody}>
+                If you see yourself in one of these characters — we&apos;re sorry. Also, you&apos;re
+                welcome.
+              </p>
+              <p className={styles.disclaimerBody}>
+                Play responsibly. Or don&apos;t. Nong Nut doesn&apos;t care.
+              </p>
+            </section>
+
             <p className={styles.version}>© LBKO All rights reserved.</p>
           </section>
         </div>

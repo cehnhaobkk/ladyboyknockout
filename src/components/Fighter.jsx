@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { getStateConfig } from '../fighter/characterConfig'
 import { useFighterAssets } from '../fighter/useFighterAssets'
 import {
@@ -8,9 +8,8 @@ import {
   snapPixelWidth,
 } from '../fighter/pixelScale'
 
-export default function Fighter({ character, state, flipped, height = 180, hitFlash = false }) {
+function Fighter({ character, state, flipped, height = 180, hitFlash = false }) {
   const { assets, loaded } = useFighterAssets(character)
-  const [displayState, setDisplayState] = useState(state)
   const [nativeSize, setNativeSize] = useState({
     w: 0,
     h: 0,
@@ -19,11 +18,7 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
     bodyH: 0,
   })
 
-  useEffect(() => {
-    if (state !== displayState) setDisplayState(state)
-  }, [state, displayState])
-
-  const config = getStateConfig(character, displayState)
+  const config = getStateConfig(character, state)
   const poseImage = assets[config.pose]
 
   useEffect(() => {
@@ -54,7 +49,7 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
   const koClass = config.koClass || ''
   const cssClass = config.cssClass || ''
   const cssAnimation = config.cssAnimation || 'none'
-  const isKo = displayState === 'KO'
+  const isKo = state === 'KO'
 
   const displayHeight = snapPixelHeight(nativeSize.h, height)
   const displayWidth = snapPixelWidth(nativeSize.w, nativeSize.h, displayHeight)
@@ -133,3 +128,5 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
     </div>
   )
 }
+
+export default memo(Fighter)
