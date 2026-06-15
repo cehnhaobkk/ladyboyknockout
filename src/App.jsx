@@ -14,6 +14,7 @@ import { GameSystemsManager, ROUND_TIME, ROUND_PHASE, FIGHT_START_POSITIONS } fr
 import useMobileLandscape from './hooks/useMobileLandscape'
 import useFightMusic from './hooks/useFightMusic'
 import {
+  getCharSelectPortraitScale,
   getFighterVisualScale,
   UNIFIED_FIGHTER_HEIGHT_RATIO,
 } from './fighter/pixelScale'
@@ -92,6 +93,54 @@ const ENEMIES = [
     mobHeadshot: '/characters/headshots/dmitri.png',
     color: '#9b59b6',
   },
+  {
+    id: 'somchai',
+    name: 'Somchai',
+    title: 'The Win Rider',
+    hp: 130,
+    atk: 17,
+    special: 'Helmet Headbutt 🪖',
+    taunt: '15 years on Soi 11. Never lost a passenger.',
+    img: '/characters/somchai.png',
+    mobHeadshot: '/characters/headshots/somchai.png',
+    color: '#ff6b35',
+  },
+  {
+    id: 'malee',
+    name: 'Malee',
+    title: 'Not Your Auntie',
+    hp: 128,
+    atk: 18,
+    special: 'Durian Bomb 🦨',
+    taunt: 'Her mango is sweet. Her temper is not!',
+    img: '/characters/malee.png',
+    mobHeadshot: '/characters/headshots/malee.png',
+    color: '#2d6a4f',
+  },
+  {
+    id: 'petch',
+    name: 'Petch',
+    title: 'Beauty and the Fist',
+    hp: 125,
+    atk: 16,
+    special: 'Sash Slam 👑',
+    taunt: 'Sawadee ka! Sui makmak naka!',
+    img: '/characters/petch.png',
+    mobHeadshot: '/characters/headshots/petch.png',
+    color: '#e91e8c',
+  },
+  {
+    id: 'ali',
+    name: 'Ali',
+    title: 'The Drip Lord',
+    hp: 140,
+    atk: 17,
+    special: 'IV Drip Strike 💉',
+    taunt: 'Bumrungrad said rest. Ali said no.',
+    img: '/characters/ali.png',
+    mobHeadshot: '/characters/headshots/ali.png',
+    color: '#4a90d9',
+  },
 ]
 
 const GAME_OVER_POSES = {
@@ -119,6 +168,22 @@ const GAME_OVER_POSES = {
     win: '/characters/nong_nut/5_NN_win.png',
     lose: '/characters/nong_nut/6_NN_lose.png',
   },
+  somchai: {
+    win: '/characters/somchai/7_somchai_win.png',
+    lose: '/characters/somchai/8_somchai_lose.png',
+  },
+  malee: {
+    win: '/characters/malee/7_malee_win.png',
+    lose: '/characters/malee/8_malee_lose.png',
+  },
+  petch: {
+    win: '/characters/petch/7_petch_win.png',
+    lose: '/characters/petch/8_petch_lose.png',
+  },
+  ali: {
+    win: '/characters/ali/7_ali_win.png',
+    lose: '/characters/ali/8_ali_lose.png',
+  },
 }
 
 function getGameOverPose(fighterId, won) {
@@ -127,37 +192,12 @@ function getGameOverPose(fighterId, won) {
   return won ? poses.win : poses.lose
 }
 
-function getFunnyLine(fighterId, won) {
-  const lines = {
-    dave: {
-      win: 'Dave wins the fight — loses his wallet 20 minutes later, still calls it a great night.',
-      lose: 'Dave is still on the floor. He thinks he slipped on Singha.',
-    },
-    kyle: {
-      win: "Kyle is now undefeated in Thailand. Still can't get a date back home.",
-      lose: "Kyle's phone is cracked. His ego is worse.",
-    },
-    xiaoming: {
-      win: 'Xiaoming wins, checks his phone — 47 missed calls from the tour group, he does not care.',
-      lose: 'The selfie stick did not help. The fanny pack did not help either.',
-    },
-    rajesh: {
-      win: 'Rajesh got the number and the victory. Very good day.',
-      lose: 'Rajesh is calling his mother. She is very disappointed.',
-    },
-    dmitri: {
-      win: 'Dmitri bought the arena. He is renaming it after himself.',
-      lose: 'Impossible. Dmitri blames the vodka. All 3 bottles.',
-    },
-    nong_nut: {
-      win: 'Another tourist learned the hard way. Nong Nut remains undefeated. 💅',
-      lose: 'Even the Queen has off nights. They always find out eventually.',
-    },
-  }
-  if (!won) {
-    return lines[fighterId]?.lose || 'Never try, never know. Now you know. Bye. 💅'
-  }
-  return lines[fighterId]?.win || 'Victory! Thailand remembers this day.'
+function getFighterWinDescription(fighter) {
+  return fighter.taunt || fighter.tagline || ''
+}
+
+function getFighterWinTitle(fighter) {
+  return `${fighter.name} wins!`
 }
 
 function getScoreLabel(score) {
@@ -227,17 +267,15 @@ function GameOverScreen({
       <div className="gameover-content gameover-dim">
         {playerWon ? (
           <>
-            <div className="go-headline go-headline-win">YOU WIN THE FIGHT!</div>
-            <div className="go-winner-sub">{PLAYER.name} is victorious</div>
+            <div className="go-headline go-headline-win">{getFighterWinTitle(PLAYER)}</div>
             <div className="go-score">SCORE: {score.toLocaleString()}</div>
             <div className="go-score-label">{scoreLabel}</div>
-            <div className="go-message">{getFunnyLine(PLAYER.id, true)}</div>
+            <div className="go-message">{getFighterWinDescription(PLAYER)}</div>
           </>
         ) : (
           <>
-            <div className="go-headline go-headline-lose">{opponentFighter.name} defeated you!</div>
-            <div className="go-winner-sub">{opponentFighter.name} is victorious</div>
-            <div className="go-message go-message-lose">{getFunnyLine(opponentFighter.id, true)}</div>
+            <div className="go-headline go-headline-lose">{getFighterWinTitle(opponentFighter)}</div>
+            <div className="go-message go-message-lose">{getFighterWinDescription(opponentFighter)}</div>
           </>
         )}
         <img
@@ -269,10 +307,12 @@ function GameOverScreen({
 }
 
 const STAGES = [
-  { id: 'bangkok', name: 'Bangkok', subtitle: 'Chao Phraya Rumble', img: '/stages/Bangkok.png' },
+  { id: 'bangkok', name: 'Chao Phraya', subtitle: 'Chao Phraya Rumble', img: '/stages/Bangkok.png' },
   { id: 'pattaya', name: 'Pattaya', subtitle: 'Walking Street Warfare', img: '/stages/Pattaya.png' },
   { id: 'phuket', name: 'Phuket', subtitle: 'Phuket Fight Club', img: '/stages/Phuket.png' },
   { id: 'chiangmai', name: 'Chiang Mai', subtitle: 'Lantern Festival Brawl', img: '/stages/Changmai.png' },
+  { id: 'yaowarat', name: 'Bangkok', subtitle: 'Yaowarat Street Fight', img: '/stages/Yaowarat.png' },
+  { id: 'surin', name: 'Surin', subtitle: 'Rice Field Rumble', img: '/stages/Surin.png' },
 ]
 
 PLAYER.img = publicUrl(PLAYER.img)
@@ -294,11 +334,14 @@ const STAGE_GROUND_BOTTOM = {
   pattaya: '2%',
   phuket: '7%',
   chiangmai: '3%',
+  yaowarat: '6%',
+  surin: '4%',
 }
 
 /** Extra top inset for sprites with tall hair / headroom in the PNG */
 const FIGHTER_TOP_PADDING = {
   nong_nut: 24,
+  rajesh: 20,
 }
 
 const FIGHTER_MAX_HEIGHT = 220
@@ -347,10 +390,7 @@ function computeFighterSizes(arenaH, groundBottomPercent, playerId, enemyId) {
     80,
     Math.round(baseHeight * getFighterVisualScale(playerId)),
   )
-  const enemyFighterHeight = Math.max(
-    80,
-    Math.round(baseHeight * getFighterVisualScale(enemyId)),
-  )
+  const enemyFighterHeight = playerFighterHeight
   const playerSpriteW = getSpriteWidthForCharacter(playerId, playerFighterHeight)
   const enemySpriteW = getSpriteWidthForCharacter(enemyId, enemyFighterHeight)
   return {
@@ -484,8 +524,6 @@ function createFightState(opponentId, stageId) {
     playerCombo: 0,
     lastHitOnPlayer: 0,
     enemyCombo: 0,
-    battleMsg: '',
-    battleMsgUntil: 0,
     shakeUntil: 0,
     flashUntil: 0,
     score: 0,
@@ -581,8 +619,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+.char-select-screen {
   padding-top: clamp(3rem, 10vh, 6rem);
   padding-bottom: 2rem;
+}
+.stage-select-screen {
+  padding-top: clamp(2rem, 7vh, 4.5rem);
+  padding-bottom: 1.5rem;
+  min-height: 0;
 }
 .char-select-screen .char-select-title {
   font-size: clamp(0.72rem, 3.25vw, 1.1rem);
@@ -987,12 +1032,12 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   max-height: 88%;
-  width: 88%;
-  max-width: 88%;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   align-self: center;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: clamp(0.25rem, 1vh, 0.35rem);
   overflow: hidden;
@@ -1039,56 +1084,63 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: clamp(2rem, 5vw, 4rem);
+  gap: clamp(2.3rem, 5.75vw, 4.6rem);
   flex-wrap: wrap;
   margin: 2.25rem 0 2.75rem;
   width: 100%;
-  max-width: 936px;
+  max-width: 1076px;
 }
 .char-select-screen .vs-row .vs-big {
-  font-size: clamp(2.535rem, 6.76vw, 4.225rem);
+  font-size: clamp(2.915rem, 7.77vw, 4.86rem);
 }
 .char-select-screen .vs-row .char-name {
-  font-size: 0.7605rem;
+  font-size: 0.875rem;
 }
 .char-select-screen .vs-row .char-title {
-  font-size: 0.5915rem;
+  font-size: 0.68rem;
   white-space: nowrap;
 }
 .char-select-screen .vs-row .char-tagline {
-  font-size: 0.5915rem;
+  font-size: 0.68rem;
 }
 .char-select-screen .vs-row .char-tagline-secondary,
 .char-select-screen .vs-row .char-taunt {
-  font-size: 0.546rem;
+  font-size: 0.628rem;
 }
 .char-select-screen .vs-row .char-placeholder {
-  font-size: 0.676rem;
+  font-size: 0.777rem;
 }
 .char-select-screen .vs-big {
-  font-size: clamp(1.95rem, 5.2vw, 3.25rem);
+  font-size: clamp(2.24rem, 5.98vw, 3.74rem);
   color: var(--neon-pink);
   align-self: center;
 }
 .char-select-screen .char-side {
   text-align: center;
-  min-width: min(36vw, 260px);
+  min-width: min(41vw, 299px);
 }
 .char-select-screen .char-side img {
-  width: min(34vw, 234px);
+  width: min(39vw, 269px);
   height: auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 0 14px rgba(255,0,200,0.55));
-  transition: width 0.2s ease, filter 0.2s ease;
+  transition: filter 0.2s ease;
 }
 .char-select-screen .char-side.player-side img {
-  width: min(38vw, 272px);
+  width: min(44vw, 313px);
 }
 .char-select-screen .char-side.enemy-side {
-  min-height: min(38vw, 272px);
+  min-height: min(49vw, 352px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
 }
 .char-select-screen .char-side.enemy-side img {
-  width: min(38vw, 272px);
+  width: min(44vw, 313px);
+  height: min(49vw, 352px);
+  object-fit: contain;
+  object-position: bottom center;
 }
 .char-select-opponent-flip {
   display: inline-block;
@@ -1098,36 +1150,39 @@ body {
   display: block;
 }
 .char-select-screen .char-side.enemy-side.selected img {
-  width: min(38vw, 272px);
+  width: min(44vw, 313px);
 }
 .char-select-screen .char-name {
-  font-size: 0.585rem;
+  font-size: 0.673rem;
   margin-top: 0.65rem;
   color: #fff;
 }
 .char-select-screen .char-tagline,
 .char-select-screen .char-title {
-  font-size: 0.455rem;
+  font-size: 0.523rem;
   margin-top: 0.45rem;
   color: var(--neon-cyan);
   line-height: 1.7;
 }
 .char-select-screen .char-tagline-secondary,
 .char-select-screen .char-taunt {
-  font-size: 0.42rem;
+  font-size: 0.483rem;
   margin-top: 0.38rem;
   color: var(--neon-cyan);
   line-height: 1.75;
 }
 .char-select-screen .char-taunt {
-  max-width: 260px;
+  max-width: 299px;
   margin-left: auto;
   margin-right: auto;
 }
+.char-select-screen .char-side.enemy-side .char-taunt {
+  transform: translateX(-10px);
+}
 .char-select-screen .char-placeholder {
-  font-size: 0.52rem;
+  font-size: 0.598rem;
   opacity: 0.6;
-  min-height: min(38vw, 272px);
+  min-height: min(44vw, 313px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1153,22 +1208,32 @@ body {
   width: 100%;
 }
 .char-select-screen .enemy-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 1rem;
-  max-width: 728px;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(0.4rem, 0.69vw, 0.86rem);
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
 }
 .char-select-screen .enemy-card {
+  flex: 0 1 110px;
+  min-width: 0;
+  max-width: 110px;
   border: 3px solid #333;
-  padding: 0.45rem;
+  padding: 0.52rem;
   cursor: pointer;
   background: #120018;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .char-select-screen .enemy-card:hover {
   border-color: #d257ff;
+}
+.char-select-screen .enemy-card:hover,
+.char-select-screen .enemy-card.selected,
+.char-select-screen .enemy-card.fate-locked {
+  transform: none;
 }
 .char-select-screen .enemy-card.selected {
   border-color: var(--neon-pink);
@@ -1186,7 +1251,6 @@ body {
   animation: fateCardPulse 0.12s steps(2) infinite;
 }
 .char-select-screen .enemy-card.fate-locked {
-  animation: fateLand 0.45s ease-out;
   border-color: var(--neon-pink);
   box-shadow: 0 0 24px rgba(255, 46, 166, 1), inset 0 0 16px rgba(255, 46, 166, 0.45);
 }
@@ -1202,8 +1266,8 @@ body {
 .char-side.enemy-side.fate-rolling img {
   animation: fatePortraitShuffle 0.1s steps(2) infinite;
 }
-.char-side.enemy-side.fate-locked img {
-  animation: fatePortraitLand 0.5s ease-out;
+.char-select-screen .char-side.enemy-side.fate-locked img {
+  animation: none;
 }
 @keyframes fatePortraitShuffle {
   0% { transform: translateX(-3px); filter: brightness(1.1); }
@@ -1223,12 +1287,14 @@ body {
 }
 .char-select-screen .enemy-card img {
   width: 100%;
-  height: auto;
+  height: 92px;
+  object-fit: contain;
+  object-position: bottom center;
   image-rendering: pixelated;
   display: block;
 }
 .char-select-screen .enemy-card-name {
-  font-size: 0.455rem;
+  font-size: 0.523rem;
   margin-top: 0.35rem;
 }
 .stage-select-screen .stage-select-title {
@@ -1237,19 +1303,24 @@ body {
 }
 .stage-select-screen .stage-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  max-width: 936px;
-  margin: 2.25rem auto 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, auto);
+  row-gap: clamp(0.9rem, 1.5vw, 1.35rem);
+  column-gap: clamp(0.9rem, 1.5vw, 1.35rem);
+  max-width: min(100%, 1188px);
+  margin: 1.25rem auto 0;
   width: 100%;
-  padding: 0 0.5rem;
+  padding: 0 0.55rem;
 }
 .stage-select-screen .stage-card {
   position: relative;
   border: 3px solid #333;
   cursor: pointer;
   overflow: hidden;
+  width: 100%;
   aspect-ratio: 16/10;
+  height: auto;
+  min-height: 0;
   padding: 0;
   background: #120018;
   font-family: inherit;
@@ -1283,8 +1354,8 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  padding: 0.65rem 0.78rem;
-  font-size: calc(0.585rem + 2px);
+  padding: 0.72rem 0.86rem;
+  font-size: calc(0.644rem + 2px);
   color: #fff;
   text-shadow: 0 0 6px rgba(0,0,0,0.9), 1px 1px 0 #000;
   background: linear-gradient(135deg, rgba(0,0,0,0.75), transparent);
@@ -1292,7 +1363,7 @@ body {
 }
 .stage-select-screen .char-select-actions {
   text-align: center;
-  margin-top: 1.75rem;
+  margin-top: 3rem;
 }
 .stage-select-screen .btn {
   font-size: 0.715rem;
@@ -1656,13 +1727,30 @@ body {
 .announcer-text {
   position: absolute;
   left: 50%;
-  top: 38%;
+  top: 30%;
   transform: translate(-50%, -50%);
   font-family: 'Press Start 2P', monospace;
   font-weight: bold;
   z-index: 30;
   white-space: nowrap;
   pointer-events: none;
+  text-align: center;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.announcer-text.has-subtitle {
+  white-space: normal;
+}
+.announcer-subtitle {
+  font-size: clamp(0.35rem, 1.5vw, 0.55rem);
+  font-weight: normal;
+  color: #fff;
+  margin-top: 8px;
+  line-height: 1.6;
+  white-space: normal;
+  max-width: min(90vw, 420px);
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000;
 }
 .announcer-zoom {
   animation: announcerZoom 0.6s ease-out forwards;
@@ -1682,23 +1770,24 @@ body {
 }
 .combo-display {
   position: absolute;
-  left: 50%;
-  top: 55%;
-  text-align: center;
+  left: 10%;
+  top: 24%;
+  text-align: left;
   z-index: 28;
   pointer-events: none;
+  transform-origin: left center;
 }
 .combo-number {
   display: block;
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(1.5rem, 6vw, 3rem);
+  font-size: clamp(1.25rem, 5vw, 2.5rem);
   color: #ffff00;
   text-shadow: 3px 3px 0 #ff4400, -1px -1px 0 #000;
 }
 .combo-label {
   display: block;
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(0.5rem, 2vw, 0.8rem);
+  font-size: clamp(0.42rem, 1.7vw, 0.68rem);
   color: #ff8800;
   text-shadow: 2px 2px 0 #000;
   margin-top: 4px;
@@ -1745,7 +1834,7 @@ body {
   text-shadow: 0 0 6px #0ff;
 }
 .timer-value {
-  font-size: clamp(20px, 4vw, 32px);
+  font-size: clamp(14px, 3vw, 22px);
   line-height: 1;
   font-family: 'Press Start 2P', monospace;
 }
@@ -1758,7 +1847,7 @@ body {
   50% { transform: scale(1.15); }
 }
 .round-label {
-  font-size: 10px;
+  font-size: 7px;
   margin-top: 4px;
   color: var(--neon-gold);
   font-family: 'Press Start 2P', monospace;
@@ -1770,18 +1859,6 @@ body {
   font-family: 'Press Start 2P', monospace;
   letter-spacing: 1px;
 }
-.battle-msg {
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  transform: translate(-50%, -50%);
-  z-index: 25;
-  font-size: clamp(0.65rem, 2.5vw, 1rem);
-  color: var(--neon-gold);
-  text-shadow: 0 0 10px #f80, 0 0 20px #f00;
-  pointer-events: none;
-  white-space: nowrap;
-}
 .fighters {
   position: absolute;
   inset: 0;
@@ -1791,15 +1868,15 @@ body {
   position: absolute;
   transform-origin: 50% 100%;
   will-change: left, bottom;
-}
-.fighter:has(.fighter-wrap.is-ko) {
   overflow: visible;
 }
 .fighter-wrap {
-  contain: layout style;
   border: none;
   outline: none;
   background: transparent;
+  overflow: visible;
+}
+.fighter-sprite-stage {
   overflow: visible;
 }
 .fighter-wrap.is-ko {
@@ -1817,10 +1894,8 @@ body {
   pointer-events: none;
   z-index: -1;
 }
-.fighter img {
-  height: auto;
-  width: auto;
-  display: block;
+.fighter .fighter-image {
+  max-width: none;
 }
 .fighter-image {
   image-rendering: pixelated;
@@ -1835,19 +1910,18 @@ body {
   box-shadow: none;
 }
 @keyframes walkBob {
-  0%, 100% { transform: translateY(0) scaleY(1); }
-  25% { transform: translateY(-4px) scaleY(1.04); }
-  75% { transform: translateY(2px) scaleY(0.97); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 @keyframes genericPunch {
-  0% { transform: translateX(0) scaleX(1); }
-  35% { transform: translateX(24px) scaleX(1.1); }
-  100% { transform: translateX(0) scaleX(1); }
+  0% { transform: translateX(0); }
+  35% { transform: translateX(14px); }
+  100% { transform: translateX(0); }
 }
 @keyframes genericKick {
   0% { transform: translateY(0); }
-  45% { transform: translateY(-10px) rotate(-4deg); }
-  100% { transform: translateY(0) rotate(0); }
+  45% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
 }
 @keyframes daveBob {
   0%,100% { transform: translateY(0) scaleY(1) scaleX(1); }
@@ -1872,9 +1946,9 @@ body {
 }
 @keyframes daveFlyKick {
   0%   { transform: translateX(0) translateY(0) rotate(0); }
-  20%  { transform: translateX(15px) translateY(-25px) rotate(-8deg); }
-  50%  { transform: translateX(40px) translateY(-35px) rotate(-12deg); }
-  75%  { transform: translateX(50px) translateY(-15px) rotate(-6deg); }
+  20%  { transform: translateX(10px) translateY(-10px) rotate(-5deg); }
+  50%  { transform: translateX(18px) translateY(-14px) rotate(-7deg); }
+  75%  { transform: translateX(22px) translateY(-8px) rotate(-4deg); }
   100% { transform: translateX(0) translateY(0) rotate(0); }
 }
 @keyframes daveHurt {
@@ -2053,6 +2127,7 @@ body {
 .fighter-image.special-fx { animation: specialPulse 0.6s ease-in-out; }
 .fighter-image.hurt-fx { animation: hurtFlash 0.45s ease-out; }
 .fighter-image.ko-fx { animation: koFall 0.7s ease forwards; }
+.fighter-wrap.is-ko .fighter-image.ko-fx { animation: none !important; }
 .fighter-image.win-fx { animation: winBounce 0.45s ease-in-out infinite; }
 .fighter-image.dave-ko,
 .fighter-image.dmitri-ko,
@@ -2086,7 +2161,7 @@ body {
 .hit-flash.hit { background: rgba(255, 61, 0, 0.25); }
 .damage-num {
   position: absolute;
-  font-size: 0.65rem;
+  font-size: 0.42rem;
   color: #ff4444;
   text-shadow: 0 0 6px #f00, 1px 1px 0 #000;
   pointer-events: none;
@@ -2100,7 +2175,7 @@ body {
 .hit-spark {
   position: absolute;
   z-index: 33;
-  font-size: 1rem;
+  font-size: 0.6rem;
   pointer-events: none;
   animation: sparkOut 0.2s ease-out forwards;
 }
@@ -2243,12 +2318,12 @@ body {
   color: #00eeff;
 }
 .go-title-win {
-  font-size: clamp(1rem, 5vw, 2rem);
+  font-size: clamp(0.7rem, 3.5vw, 1.4rem);
   color: var(--neon-gold);
   animation: glowWin 1.2s ease-in-out infinite alternate;
 }
 .go-title-lose {
-  font-size: clamp(0.85rem, 4vw, 1.6rem);
+  font-size: clamp(0.6rem, 3vw, 1.1rem);
   color: #ff2244;
   animation: glowLose 1s ease-in-out infinite alternate;
 }
@@ -2533,8 +2608,9 @@ body.fight-active {
     max-width: 100%;
     width: 100%;
     align-content: stretch;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    max-height: none;
   }
   .stage-select-screen .stage-card {
     aspect-ratio: 16 / 10;
@@ -2590,10 +2666,6 @@ body.fight-active {
   }
   .fight-stage {
     padding-bottom: 5.25rem;
-  }
-  .battle-msg {
-    font-size: clamp(0.45rem, 2vw, 0.75rem);
-    top: 38%;
   }
   .gameover-overlay {
     padding-top: max(1.25rem, calc(1rem + env(safe-area-inset-top, 0px)));
@@ -2819,6 +2891,8 @@ export default function App() {
     setEnemyFighterState('IDLE')
     setPlayerFlipped(false)
     setEnemyFlipped(true)
+    setHoverEnemyId(null)
+    setFatePreviewId(null)
     return fightState
   }, [])
 
@@ -2922,6 +2996,7 @@ export default function App() {
   const handleEnemyPick = (id) => {
     if (fateRolling || mobileAdvancing) return
     clearFateRoll()
+    setHoverEnemyId(null)
     setSelectedEnemyId(id)
     if (isMobileLandscape) scheduleMobileAdvanceToStage()
   }
@@ -2943,6 +3018,7 @@ export default function App() {
   const goCharSelect = () => {
     clearFateRoll()
     clearMobileAdvance()
+    fightRef.current = null
     setScreen('charSelect')
     setSelectedEnemyId(null)
   }
@@ -3106,6 +3182,18 @@ export default function App() {
       const id = fr.dnId++
       fr.damageNumbers.push({ id, x, y, val: Math.round(val), col, t: 0 })
       if (fr.damageNumbers.length > 12) fr.damageNumbers.shift()
+      window.setTimeout(() => {
+        const f = fightRef.current
+        if (!f) return
+        f.damageNumbers = f.damageNumbers.filter((d) => d.id !== id)
+        bumpHud()
+      }, 900)
+      bumpHud()
+    }
+
+    const clearDamageNumbers = () => {
+      if (!fr.damageNumbers.length) return
+      fr.damageNumbers = []
       bumpHud()
     }
 
@@ -3136,11 +3224,14 @@ export default function App() {
         flashRef.current.classList.add('cyan')
       }
     }
+    const triggerSpecialMoveAnnounce = (fighterDef) => {
+      if (!fighterDef?.special) return
+      systemsRef.current?.announcer.onSpecialMove(fighterDef.special)
+    }
     const triggerBeerBellyBash = (nowTs) => {
       screenShakeLong()
       flashGold()
-      fr.battleMsg = 'BEER BELLY BASH!! 🍺'
-      fr.battleMsgUntil = nowTs + 900
+      triggerSpecialMoveAnnounce(getFighterById('dave'))
     }
     const triggerRedPillRush = (nowTs, forPlayer = false) => {
       if (forPlayer) {
@@ -3151,8 +3242,7 @@ export default function App() {
         fr.enemyChargeUntil = nowTs + 550
       }
       flashCyan()
-      fr.battleMsg = 'RED PILL RUSH! 📱'
-      fr.battleMsgUntil = nowTs + 900
+      triggerSpecialMoveAnnounce(getFighterById('kyle'))
     }
     const triggerPlayerKoSequence = (nowTs) => {
       window.setTimeout(() => screenShake(), 400)
@@ -3171,27 +3261,15 @@ export default function App() {
           bumpHud()
         }, 600)
       }
-      window.setTimeout(() => {
-        const f = fightRef.current
-        if (!f) return
-        f.battleMsg = 'K.O.!'
-        f.battleMsgUntil = nowTs + 1800
-        bumpHud()
-      }, 800)
       window.setTimeout(() => announceEnemyWin(), 1200)
     }
-    const announceEnemyWin = () => {
-      fr.battleMsg = `${enemyDef.name.toUpperCase()} WINS!`
-      fr.battleMsgUntil = performance.now() + 2200
-      bumpHud()
-      window.setTimeout(() => {
-        const f = fightRef.current
-        if (!f) return
-        f.battleMsg = enemyDef.taunt ? `“${enemyDef.taunt}”` : ''
-        f.battleMsgUntil = performance.now() + 2800
-        bumpHud()
-      }, 900)
+    const announceFighterWin = (fighter) => {
+      const sys = systemsRef.current
+      if (!sys) return
+      sys.announcer.onFighterWin(fighter.name, getFighterWinDescription(fighter))
     }
+    const announceEnemyWin = () => announceFighterWin(enemyDef)
+    const announcePlayerWin = () => announceFighterWin(PLAYER)
 
     timerRef.current = window.setInterval(() => {
       const f = fightRef.current
@@ -3215,6 +3293,7 @@ export default function App() {
           if (winner === 'player') {
             setFighterState('player', 'WIN', true)
             setFighterState('enemy', 'KO', true)
+            window.setTimeout(() => announcePlayerWin(), 1200)
           } else {
             setFighterState('enemy', 'WIN', true)
             announceEnemyWin()
@@ -3307,12 +3386,6 @@ export default function App() {
       addHitSpark(fr.ex + 70, fr.arenaH * 0.45)
       playSound('hit')
       updateFightHudDom(fr)
-      if (isSpecial && !isSuper) {
-        fr.battleMsg = playerDef.specialTagline
-          ? `${playerDef.special} — ${playerDef.specialTagline}`
-          : playerDef.special
-        fr.battleMsgUntil = now + 900
-      }
       if (fr.ehp <= 0) {
         sys.onHit({
           attacker: 'player', defender: 'enemy', damage: 0, attackType: type,
@@ -3320,10 +3393,12 @@ export default function App() {
           defenderMaxHp: fr.emax, defenderHp: 0, defenderHpAfter: 0,
         })
         fr.roundWinnerSide = 'player'
+        clearDamageNumbers()
         sys.onKO('player')
         sys.onRoundEnd('player', 'ko', fr, now)
         setFighterState('player', 'WIN', true)
         setFighterState('enemy', 'KO', true)
+        window.setTimeout(() => announcePlayerWin(), 1200)
       }
       bumpHud()
     }
@@ -3386,6 +3461,7 @@ export default function App() {
           defenderMaxHp: fr.pmax, defenderHp: 0, defenderHpAfter: 0,
         })
         fr.roundWinnerSide = 'enemy'
+        clearDamageNumbers()
         sys.onKO('enemy')
         sys.onRoundEnd('enemy', 'ko', fr, now)
         setFighterState('enemy', 'WIN', true)
@@ -3460,9 +3536,6 @@ export default function App() {
         flashRef.current.classList.remove('gold')
         flashRef.current.classList.remove('cyan')
       }
-      if (f.battleMsgUntil < now) {
-        f.battleMsg = ''
-      }
 
       if (f.matchOver && f.matchWinner && now > f.roundEndAt) {
         const flawless = f.matchWinner === 'player'
@@ -3518,6 +3591,7 @@ export default function App() {
         if (pressed.has('KeyL')) {
           if (setFighterState('player', 'SPECIAL')) {
             scheduleAttack(f, 'player', fr.playerId, 'SPECIAL', now)
+            triggerSpecialMoveAnnounce(playerDef)
           }
         }
         if (pressed.has('KeyI')) {
@@ -3691,7 +3765,8 @@ export default function App() {
             if (aiDecision.punish) sys.announcer.onPunish()
             if (aiDecision.attack === 'SPECIAL') {
               if (usesDaveAi(fr.enemyId)) triggerBeerBellyBash(now)
-              if (usesKyleAi(fr.enemyId)) triggerRedPillRush(now)
+              else if (usesKyleAi(fr.enemyId)) triggerRedPillRush(now)
+              else triggerSpecialMoveAnnounce(enemyDef)
             }
             if (aiDecision.attack === 'PUNCH' || aiDecision.attack === 'KICK') {
               sys.ai.recordPlayerAttack(aiDecision.attack.toLowerCase())
@@ -3836,7 +3911,7 @@ export default function App() {
                 (() => {
                   const previewId = fateRolling
                     ? fatePreviewId
-                    : hoverEnemyId || selectedEnemyId || fatePreviewId
+                    : selectedEnemyId || hoverEnemyId || fatePreviewId
                   const e = previewId ? getEnemyById(previewId) : null
                   if (!e) {
                     return (
@@ -3940,7 +4015,14 @@ export default function App() {
                   <span
                     className={shouldFlipOpponentForCharSelect(e.id) ? 'char-select-opponent-flip' : undefined}
                   >
-                    <img src={e.img} alt="" />
+                    <img
+                      src={e.img}
+                      alt=""
+                      style={{
+                        transform: `scale(${getCharSelectPortraitScale(e.id)})`,
+                        transformOrigin: 'bottom center',
+                      }}
+                    />
                   </span>
                   <p className="enemy-card-name">{e.name}</p>
                 </button>
@@ -3966,11 +4048,11 @@ export default function App() {
               <div
                 className={`char-side enemy-side ${selectedEnemyId || fatePreviewId ? 'selected' : ''} ${fateRolling ? 'fate-rolling' : ''} ${!fateRolling && selectedEnemyId ? 'fate-locked' : ''}`}
               >
-                {fateRolling || hoverEnemyId || selectedEnemyId || fatePreviewId ? (
+                {fateRolling || selectedEnemyId || fatePreviewId ? (
                   (() => {
                     const previewId = fateRolling
                       ? fatePreviewId
-                      : hoverEnemyId || selectedEnemyId || fatePreviewId
+                      : selectedEnemyId || hoverEnemyId || fatePreviewId
                     const e = previewId ? getEnemyById(previewId) : null
                     if (!e) return <p className="char-placeholder">Pick a fighter</p>
                     return (
@@ -3980,7 +4062,14 @@ export default function App() {
                             shouldFlipOpponentForCharSelect(e.id) ? 'char-select-opponent-flip' : undefined
                           }
                         >
-                          <img src={e.img} alt={e.name} />
+                          <img
+                            src={e.img}
+                            alt={e.name}
+                            style={{
+                              transform: `scale(${getCharSelectPortraitScale(e.id)})`,
+                              transformOrigin: 'bottom center',
+                            }}
+                          />
                         </span>
                         <p className="char-name">{e.name}</p>
                         <p className="char-title">{e.title}</p>
@@ -4008,11 +4097,11 @@ export default function App() {
               disabled={fateRolling || mobileAdvancing}
               onClick={() => startFateDecide()}
             >
-              {fateRolling ? 'SELECTING...' : 'LET FATE DECIDE'}
+              {fateRolling ? 'SELECTING...' : 'LET FATE DECIDE KA'}
             </button>
             {selectedEnemyId && !fateRolling && !mobileAdvancing && (
               <button type="button" className="btn btn-primary" onClick={goStageSelect}>
-                LET&apos;S FIGHT
+                BA, LET&apos;S FIGHT NA
               </button>
             )}
             <button type="button" className="back-link" onClick={goTitle}>
@@ -4239,8 +4328,6 @@ export default function App() {
               arenaRef={arenaRef}
             />
 
-            {fr.battleMsg && <div className="battle-msg">{fr.battleMsg}</div>}
-
             <div className="fighters" ref={arenaRef}>
               {fr.damageNumbers.map((d) =>
                 d.spark ? (
@@ -4258,6 +4345,7 @@ export default function App() {
               )}
               <div className="fighter" ref={playerWrapRef}>
                 <Fighter
+                  key={`player-${fr.playerId}`}
                   character={fr.playerId}
                   state={playerFighterState}
                   flipped={playerFlipped}
@@ -4267,6 +4355,7 @@ export default function App() {
               </div>
               <div className="fighter" ref={enemyWrapRef}>
                 <Fighter
+                  key={`enemy-${fr.enemyId}`}
                   character={fr.enemyId}
                   state={enemyFighterState}
                   flipped={enemyFlipped}

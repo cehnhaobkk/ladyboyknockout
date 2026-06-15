@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react'
 import styles from './TitleScreen.module.css'
 import { publicUrl } from '../utils/publicUrl.js'
+import { useArcadeTypewriter } from '../hooks/useArcadeTypewriter.js'
+import { OPPONENT_COUNT } from '../fighter/characterConfig.js'
 import { isIOS, isStandaloneMode, requestAppFullscreen } from '../utils/fullscreen.js'
 
 const MARQUEE_TEXT =
@@ -11,6 +13,14 @@ const MARQUEE_TEXT =
   '\u00a0·\u00a0 NONG NUT DOESN\'T CARE. FIGHT ANYWAY. 👊' +
   '\u00a0·\u00a0 '
 
+const WELCOME_LINES = [
+  'Sawadeeka Teerak',
+  'Welcome to Ladyboy Knockout.',
+  `Challenge ${OPPONENT_COUNT} fearless warriors before your cocktails run low.`,
+  'Read ABOUT THE GAME before you tap start.',
+  'Now have fun, teerak!',
+]
+
 const CONTROLS = [
   { badges: ['←', '→'], label: 'Move left / right' },
   { badges: ['↑'], label: 'Jump' },
@@ -20,6 +30,27 @@ const CONTROLS = [
   { badges: ['L'], label: 'Special move' },
   { badges: ['I'], label: 'Fly kick' },
 ]
+
+function TitleWelcomeHost() {
+  const { text, showCursor } = useArcadeTypewriter(WELCOME_LINES)
+
+  return (
+    <div className={styles.welcomeHost} aria-live="polite">
+      <div className={styles.welcomeBubble}>
+        <p className={styles.welcomeText}>
+          {text}
+          {showCursor ? <span className={styles.welcomeCursor} aria-hidden>|</span> : null}
+        </p>
+      </div>
+      <img
+        className={styles.welcomePortrait}
+        src={publicUrl('/assets/welcome_nn.png')}
+        alt=""
+        draggable={false}
+      />
+    </div>
+  )
+}
 
 export default function TitleScreen({ onStart }) {
   const [loading, setLoading] = useState(false)
@@ -83,6 +114,8 @@ export default function TitleScreen({ onStart }) {
         </button>
       </div>
 
+      <TitleWelcomeHost />
+
       <div className={styles.chrome}>
         <button type="button" className={styles.aboutBtn} onClick={openAbout}>
           ABOUT THE GAME ▶
@@ -121,14 +154,14 @@ export default function TitleScreen({ onStart }) {
             <h2 className={styles.sectionHeading}>ABOUT THE GAME</h2>
             <p className={styles.sectionBody}>
               A retro arcade fighter set on the streets of Thailand. You are Nong Nut, the Knockout
-              Queen — pick your farang opponent from Dave the Pattaya Geezer, Kyle the Passport Bro,
-              Xiaoming the Tour Boss, Rajesh the Delhi Dynamo, or Dmitri the Walking Open Bar, then
-              teach them the hard way.
+              Queen — take on {OPPONENT_COUNT} fearless rivals, from expat icons like Dave, Dmitri,
+              and Ali to Bangkok locals like Somchai, Malee, and Petch. Pick your opponent or let
+              fate decide, then teach them the hard way.
             </p>
             <p className={styles.sectionBody}>
-              Win two out of three rounds across Bangkok, Pattaya, Phuket, or Chiang Mai. Chain
-              combos, land your Som Tam Slam special, and shut down their signature moves. Choose
-              your rival or let fate decide. They always find out the hard way. 💅
+              Win two out of three rounds across six stages, from Chao Phraya to Yaowarat and beyond.
+              Chain combos, land your Som Tam Slam special, and shut down their signature moves. They
+              always find out the hard way. 💅
             </p>
           </section>
 
@@ -156,10 +189,10 @@ export default function TitleScreen({ onStart }) {
           </section>
 
           <section className={styles.section}>
-            <h2 className={styles.sectionHeading}>BUY US A COFFEE</h2>
+            <h2 className={styles.sectionHeading}>SUPPORT THE GAME</h2>
             <p className={styles.sectionBody}>
               Nong Nut fights for free. We don&apos;t. Server bills, sprite sheets, and Dave&apos;s
-              emergency Singha fund add up fast. Toss a coffee our way — cheaper than a tuk-tuk
+              emergency Singha fund add up fast. Toss a drink our way — cheaper than a tuk-tuk
               argument at 2am, and it actually helps ship the next update.
             </p>
             <a
@@ -168,7 +201,7 @@ export default function TitleScreen({ onStart }) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              ☕ BUY ME A COFFEE
+              BUY ME A LADY DRINK
             </a>
           </section>
 
@@ -190,9 +223,9 @@ export default function TitleScreen({ onStart }) {
                 This game is pure fiction and made with love in Bangkok.
               </p>
               <p className={styles.disclaimerBody}>
-                Nong Nut, Dave, Dmitri, Kyle, Rajesh and Xiaoming are fictional characters. Any
-                resemblance to actual people on Sukhumvit Soi 11 is entirely coincidental and also
-                completely intentional in spirit.
+                Nong Nut, Dave, Dmitri, Kyle, Rajesh, Xiaoming, Somchai, Malee, Petch, and Ali are
+                fictional characters. Any resemblance to actual people on Sukhumvit Soi 11 is
+                entirely coincidental and also completely intentional in spirit.
               </p>
               <p className={styles.disclaimerBody}>
                 No ladyboys, tourists, expats, motorbike drivers or corporate enforcers were harmed

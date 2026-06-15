@@ -8,6 +8,7 @@
   height: var(--app-height, 100dvh);
   max-height: var(--app-height, 100dvh);
   --chrome-text-size: clamp(5px, min(1.8vw, 1.4vh), 11px);
+  --title-floor-line: calc(0.85rem + 1.125rem + 0.45rem);
 }
 
 .marquee {
@@ -114,7 +115,7 @@
   position: absolute;
   left: 8%;
   right: 8%;
-  bottom: calc(0.85rem + 1.125rem + 0.45rem);
+  bottom: var(--title-floor-line);
   height: 2px;
   z-index: 1;
   pointer-events: none;
@@ -180,6 +181,11 @@
 
   .marqueeTrack {
     animation: none;
+  }
+
+  .welcomeCursor {
+    animation: none;
+    opacity: 1;
   }
 }
 
@@ -357,6 +363,7 @@
 .aboutBtn {
   grid-column: 1;
   justify-self: start;
+  align-self: end;
   pointer-events: auto;
   font-family: 'Press Start 2P', monospace;
   font-size: clamp(6px, min(1.1vw, 1.6vh), 10px);
@@ -622,9 +629,91 @@
   z-index: 5;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  align-items: end;
   padding: 0 1.1rem max(1rem, calc(0.85rem + env(safe-area-inset-bottom, 0px)));
   pointer-events: none;
+}
+
+.welcomeHost {
+  position: fixed;
+  left: max(1.1rem, env(safe-area-inset-left));
+  bottom: var(--title-floor-line);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.welcomeBubble {
+  position: relative;
+  margin-left: 0.55rem;
+  margin-bottom: 0.35rem;
+  padding: 0.38rem 0.5rem;
+  max-width: min(220px, 48vw);
+  background: rgba(8, 8, 14, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+}
+
+.welcomeBubble::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  bottom: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(255, 255, 255, 0.08);
+}
+
+.welcomeBubble::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  bottom: -3px;
+  z-index: 1;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid rgba(8, 8, 14, 0.55);
+}
+
+.welcomeText {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(5px, min(1.25vw, 1.65vh), 8px);
+  color: rgba(255, 255, 255, 0.42);
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  min-height: 2.75em;
+}
+
+.welcomeCursor {
+  color: rgba(255, 27, 141, 0.45);
+  animation: welcomeBlink 0.62s step-end infinite;
+}
+
+@keyframes welcomeBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.welcomePortrait {
+  width: clamp(76px, 19vw, 112px);
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
 .advisory {
@@ -649,8 +738,8 @@
 }
 
 @media (min-width: 769px) {
-  .bgFloor {
-    bottom: calc(0.85rem + 1.125rem + 0.45rem + 8px);
+  .screen {
+    --title-floor-line: calc(0.85rem + 1.125rem + 0.45rem + 8px);
   }
 }
 
@@ -692,6 +781,15 @@
     font-size: clamp(5px, 1.7vw, 8px);
   }
 
+  .welcomeText {
+    font-size: clamp(5px, 1.55vw, 7px);
+    min-height: 2.5em;
+  }
+
+  .welcomePortrait {
+    width: clamp(68px, 22vw, 96px);
+  }
+
   .heart {
     font-size: clamp(6px, 2.2vw, 10px);
   }
@@ -700,6 +798,7 @@
 @media (orientation: landscape) and (max-height: 520px) {
   .screen {
     --chrome-text-size: clamp(5px, min(1.2vw, 2vh), 10px);
+    --title-floor-line: calc(0.7rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
   }
 
   .content {
@@ -732,12 +831,20 @@
   }
 
   .bgFloor {
-    bottom: calc(0.7rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
+    bottom: var(--title-floor-line);
   }
 
   .aboutBtn {
     font-size: clamp(7px, min(1.2vw, 2.2vh), 11px);
     line-height: 1.5;
+  }
+
+  .welcomeText {
+    font-size: clamp(6px, min(1.2vw, 2vh), 9px);
+  }
+
+  .welcomePortrait {
+    width: clamp(64px, 14vh, 92px);
   }
 
   .advisory {
@@ -763,6 +870,7 @@
 @media (orientation: landscape) and (max-height: 420px) {
   .screen {
     --chrome-text-size: clamp(5px, min(1.1vw, 1.9vh), 9px);
+    --title-floor-line: calc(0.6rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
   }
 
   .chrome {
@@ -770,7 +878,7 @@
   }
 
   .bgFloor {
-    bottom: calc(0.6rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
+    bottom: var(--title-floor-line);
   }
 
   .logo {

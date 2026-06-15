@@ -1,11 +1,14 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useState } from 'react'
 import { getStateConfig } from '../fighter/characterConfig'
 import { useFighterAssets } from '../fighter/useFighterAssets'
 import {
+  getFightSpriteLayout,
+  getFighterBodyTargetHeight,
   getKoSpriteLayout,
   measureSpriteBounds,
-  snapPixelHeight,
-  snapPixelWidth,
+  preloadSpriteBounds,
+  shouldUseKoSpriteLayout,
+  spriteBoundsCache,
 } from '../fighter/pixelScale'
 
 function Fighter({ character, state, flipped, height = 180, hitFlash = false }) {
@@ -16,19 +19,71 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
     topPad: 0,
     bottomPad: 0,
     bodyH: 0,
+    bodyW: 0,
   })
 
+  const [boundsTick, setBoundsTick] = useState(0)
   const config = getStateConfig(character, state)
   const poseImage = assets[config.pose] || assets.standby
+  void boundsTick
+  const standbyBounds = assets.standby ? spriteBoundsCache.get(assets.standby) : null
+  const cachedPoseBounds = poseImage ? spriteBoundsCache.get(poseImage) : null
+  const poseBounds = cachedPoseBounds ?? nativeSize
+  const boundsReady = Boolean(cachedPoseBounds?.h)
+
+  const isKo = state === 'KO'
+  const pose = config.pose
+  const bodyTargetHeight = getFighterBodyTargetHeight(character, height)
+  const layoutPose = isKo ? 'lose' : pose
+  const useKoLayout = shouldUseKoSpriteLayout(
+    layoutPose,
+    poseBounds,
+    standbyBounds,
+    bodyTargetHeight,
+    character,
+  )
+  const useDownLayout = useKoLayout
+
+  useLayoutEffect(() => {
+    if (!poseImage) return
+    const cached = spriteBoundsCache.get(poseImage)
+    if (cached) {
+      setNativeSize(cached)
+      return
+    }
+    setNativeSize({ w: 0, h: 0, topPad: 0, bottomPad: 0, bodyH: 0, bodyW: 0 })
+  }, [poseImage])
+
+  useEffect(() => {
+    if (!assets.standby || spriteBoundsCache.has(assets.standby)) return undefined
+    const img = new Image()
+    img.onload = () => {
+      spriteBoundsCache.set(assets.standby, measureSpriteBounds(img))
+      setBoundsTick((t) => t + 1)
+    }
+    img.src = assets.standby
+    return undefined
+  }, [assets.standby])
+
+  useEffect(() => {
+    const downPoses = [assets.lose, assets.underattack].filter(Boolean)
+    downPoses.forEach((src) => preloadSpriteBounds(src))
+  }, [assets.lose, assets.underattack])
 
   useEffect(() => {
     if (!poseImage) return undefined
+    const cached = spriteBoundsCache.get(poseImage)
+    if (cached) {
+      setNativeSize(cached)
+      return undefined
+    }
+    setNativeSize({ w: 0, h: 0, topPad: 0, bottomPad: 0, bodyH: 0, bodyW: 0 })
     let cancelled = false
-    setNativeSize({ w: 0, h: 0, topPad: 0, bottomPad: 0, bodyH: 0 })
     const img = new Image()
     img.onload = () => {
       if (!cancelled) {
         const bounds = measureSpriteBounds(img)
+        spriteBoundsCache.set(poseImage, bounds)
         setNativeSize(bounds)
       }
     }
@@ -46,22 +101,36 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
     return <div style={{ width: 80, height, background: 'transparent' }} />
   }
 
+  const hasBounds = boundsReady && poseBounds.h > 0 && poseBounds.bodyH > 0
+  const hasDownBounds = boundsReady && poseBounds.w > 0 && poseBounds.h > 0
+
+  if (useDownLayout && !hasDownBounds) {
+    return <div style={{ width: 80, height, background: 'transparent' }} />
+  }
+
   const koClass = config.koClass || ''
   const cssClass = config.cssClass || ''
   const cssAnimation = config.cssAnimation || 'none'
-  const isKo = state === 'KO'
 
-  const displayHeight = snapPixelHeight(nativeSize.h, height)
-  const displayWidth = snapPixelWidth(nativeSize.w, nativeSize.h, displayHeight)
-  const koLayout = isKo
-    ? getKoSpriteLayout(
-        character,
-        displayHeight,
-        nativeSize.h || undefined,
-        nativeSize.h ? nativeSize : undefined,
-      )
-    : null
-  const wrapHeight = koLayout?.wrapHeight ?? displayHeight
+  const spriteLayout = useDownLayout
+    ? hasDownBounds
+      ? getKoSpriteLayout(character, bodyTargetHeight, poseBounds.h, poseBounds, {
+          standingBounds: standbyBounds,
+          pose,
+        })
+      : null
+    : hasBounds
+      ? getFightSpriteLayout(poseBounds, bodyTargetHeight, {
+          characterId: character,
+          state,
+          standbyBounds,
+        })
+      : null
+
+  const displayWidth = spriteLayout?.displayWidth
+  const imgHeight = spriteLayout?.imgHeight ?? (useDownLayout ? undefined : height)
+  const paddingTop = spriteLayout?.paddingTop ?? 0
+  const paddingSide = spriteLayout?.paddingSide ?? 0
 
   const koFilter =
     koClass === 'kyle-ko'
@@ -77,54 +146,72 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
 
   const wrapTransform = flipped ? 'scaleX(-1)' : undefined
 
-  const imgTransform = isKo
-    ? [
-        'translateX(-50%)',
-        koLayout?.imgOffsetY ? `translateY(${koLayout.imgOffsetY}px)` : null,
-      ]
+  const downStageWidth = spriteLayout?.wrapWidth
+  const downStageHeight = spriteLayout?.wrapHeight ?? imgHeight
+
+  const downImgTransform = useDownLayout
+    ? ['translateX(-50%)', spriteLayout?.imgOffsetY ? `translateY(${spriteLayout.imgOffsetY}px)` : null]
         .filter(Boolean)
         .join(' ')
     : undefined
 
   return (
     <div
-      className={`fighter-wrap${isKo ? ' is-ko' : ''}`}
+      className={`fighter-wrap${isKo || useDownLayout ? ' is-ko' : ''}`}
       style={{
         position: 'relative',
-        width: displayWidth ? `${displayWidth}px` : undefined,
-        height: `${wrapHeight}px`,
         transform: wrapTransform,
         transformOrigin: 'bottom center',
-        overflow: isKo ? 'visible' : undefined,
+        overflow: 'visible',
       }}
     >
-      <div className="fighter-shadow" />
-      <img
-        src={poseImage}
-        alt=""
-        draggable={false}
-        className={`fighter-image ${cssClass} ${koClass}`.trim()}
-        style={{
-          width: displayWidth ? `${displayWidth}px` : 'auto',
-          height: `${koLayout?.imgHeight ?? displayHeight}px`,
-          maxWidth: 'none',
-          border: 'none',
-          outline: 'none',
-          background: 'transparent',
-          filter: imgFilter,
-          animation: cssAnimation,
-          position: isKo ? 'absolute' : undefined,
-          left: isKo ? '50%' : undefined,
-          bottom: isKo ? 0 : undefined,
-          transform: imgTransform || undefined,
-          transformOrigin: 'bottom center',
-          transition: hitFlash ? 'filter 0.06s ease' : 'none',
-          display: 'block',
-          userSelect: 'none',
-          pointerEvents: 'none',
-          verticalAlign: 'bottom',
-        }}
-      />
+      <div
+        className="fighter-sprite-stage"
+        style={
+          useDownLayout
+            ? {
+                position: 'relative',
+                width: downStageWidth ? `${downStageWidth}px` : undefined,
+                height: downStageHeight ? `${downStageHeight}px` : undefined,
+                overflow: spriteLayout?.overflowVisible ? 'visible' : 'hidden',
+              }
+            : {
+                position: 'relative',
+                paddingTop: paddingTop ? `${paddingTop}px` : undefined,
+                paddingLeft: paddingSide ? `${paddingSide}px` : undefined,
+                paddingRight: paddingSide ? `${paddingSide}px` : undefined,
+                overflow: 'visible',
+              }
+        }
+      >
+        <div className="fighter-shadow" />
+        <img
+          src={poseImage}
+          alt=""
+          draggable={false}
+          className={`fighter-image ${cssClass} ${koClass}`.trim()}
+          style={{
+            width: displayWidth ? `${displayWidth}px` : 'auto',
+            height: `${imgHeight}px`,
+            maxWidth: 'none',
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            filter: imgFilter,
+            animation: useDownLayout ? 'none' : cssAnimation,
+            position: useDownLayout ? 'absolute' : undefined,
+            left: useDownLayout ? '50%' : undefined,
+            bottom: useDownLayout ? 0 : undefined,
+            transform: downImgTransform || undefined,
+            transformOrigin: 'bottom center',
+            transition: hitFlash ? 'filter 0.06s ease' : 'none',
+            display: 'block',
+            userSelect: 'none',
+            pointerEvents: 'none',
+            verticalAlign: 'bottom',
+          }}
+        />
+      </div>
     </div>
   )
 }

@@ -36,8 +36,8 @@ export default function FightOverlay({
       if (sys && frameRef.current % 2 === 0) {
         const next = sys.getHudState(performance.now())
         setHud((prev) => {
-          const prevKey = `${prev.announcer?.text || ''}|${prev.combo?.combo || 0}|${prev.flashWhite}`
-          const nextKey = `${next.announcer?.text || ''}|${next.combo?.combo || 0}|${next.flashWhite}`
+          const prevKey = `${prev.announcer?.text || ''}|${prev.announcer?.subtitle || ''}|${prev.combo?.combo || 0}|${prev.flashWhite}`
+          const nextKey = `${next.announcer?.text || ''}|${next.announcer?.subtitle || ''}|${next.combo?.combo || 0}|${next.flashWhite}`
           return prevKey === nextKey ? prev : next
         })
       }
@@ -49,7 +49,6 @@ export default function FightOverlay({
   }, [arenaRef, particles, systemsRef])
 
   const announcer = hud.announcer
-  const combo = hud.combo
 
   return (
     <div className="fight-overlay" aria-hidden>
@@ -59,28 +58,18 @@ export default function FightOverlay({
 
       {announcer && (
         <div
-          className={`announcer-text announcer-${announcer.anim} announcer-type-${announcer.type}`}
+          className={`announcer-text announcer-${announcer.anim} announcer-type-${announcer.type}${announcer.subtitle ? ' has-subtitle' : ''}`}
           style={{
             color: announcer.style?.color,
             fontSize: announcer.style?.size,
             opacity: announcer.fade,
-            textShadow: `2px 2px 0 ${announcer.style?.outline}, -2px -2px 0 ${announcer.style?.outline}, 2px -2px 0 ${announcer.style?.outline}, -2px 2px 0 ${announcer.style?.outline}`,
+            textShadow: `1px 1px 0 ${announcer.style?.outline}, -1px -1px 0 ${announcer.style?.outline}, 1px -1px 0 ${announcer.style?.outline}, -1px 1px 0 ${announcer.style?.outline}`,
           }}
         >
-          {announcer.text}
-        </div>
-      )}
-
-      {combo && combo.combo >= 2 && (
-        <div
-          className="combo-display"
-          style={{
-            transform: `translate(-50%, -50%) scale(${combo.scale})`,
-            opacity: combo.fade,
-          }}
-        >
-          <span className="combo-number">{combo.combo}</span>
-          <span className="combo-label">HIT COMBO</span>
+          <div className="announcer-title">{announcer.text}</div>
+          {announcer.subtitle && (
+            <div className="announcer-subtitle">{announcer.subtitle}</div>
+          )}
         </div>
       )}
 

@@ -14,7 +14,7 @@ export const CHARACTER_POSES = {
     standby: '/characters/nong_nut/1_standby.png',
     punch: '/characters/nong_nut/2_punch.png',
     kick: '/characters/nong_nut/3_kick.png',
-    flykick: '/characters/nong_nut/4_attack.png',
+    flykick: '/characters/nong_nut/4_flykick.png',
     attack: '/characters/nong_nut/4_attack.png',
     standoff: '/characters/nong_nut/5_hide.png',
     dodge: '/characters/nong_nut/5_hide.png',
@@ -45,11 +45,11 @@ export const CHARACTER_POSES = {
   },
   rajesh: {
     standby: '/characters/rajesh/1_RJ_standby.png',
-    punch: '/characters/rajesh/1_RJ_standby.png',
-    kick: '/characters/rajesh/2_RJ_kick.png',
-    flykick: '/characters/rajesh/2_RJ_kick.png',
-    attack: '/characters/rajesh/3_RJ_attack.png',
-    underattack: '/characters/rajesh/4_RJ_attacked.png',
+    punch: '/characters/rajesh/2_RJ_punch.png',
+    kick: '/characters/rajesh/3_RJ_kick.png',
+    flykick: '/characters/rajesh/3_RJ_kick.png',
+    attack: '/characters/rajesh/4_RJ_attack.png',
+    underattack: '/characters/rajesh/5_RJ_lose.png',
     win: '/characters/rajesh/6_RJ_win.png',
     lose: '/characters/rajesh/5_RJ_lose.png',
   },
@@ -62,6 +62,50 @@ export const CHARACTER_POSES = {
     special: '/characters/dmitri/5_DM_special.png',
     win: '/characters/dmitri/6_DM_win.png',
     lose: '/characters/dmitri/7_DM_lose.png',
+  },
+  somchai: {
+    standby: '/characters/somchai/1_standby.png',
+    punch: '/characters/somchai/2_punch.png',
+    kick: '/characters/somchai/3_kick.png',
+    flykick: '/characters/somchai/4_attack.png',
+    attack: '/characters/somchai/4_attack.png',
+    dodge: '/characters/somchai/5_block.png',
+    underattack: '/characters/somchai/6_lost.png',
+    win: '/characters/somchai/7_somchai_win.png',
+    lose: '/characters/somchai/8_somchai_lose.png',
+  },
+  malee: {
+    standby: '/characters/malee/1_standby.png',
+    punch: '/characters/malee/2_punch.png',
+    kick: '/characters/malee/3_kick.png',
+    flykick: '/characters/malee/4_attack.png',
+    attack: '/characters/malee/4_attack.png',
+    dodge: '/characters/malee/5_block.png',
+    underattack: '/characters/malee/6_lost.png',
+    win: '/characters/malee/7_malee_win.png',
+    lose: '/characters/malee/8_malee_lose.png',
+  },
+  petch: {
+    standby: '/characters/petch/1_standby.png',
+    punch: '/characters/petch/2_punch.png',
+    kick: '/characters/petch/3_kick.png',
+    flykick: '/characters/petch/4_attack.png',
+    attack: '/characters/petch/4_attack.png',
+    dodge: '/characters/petch/5_block.png',
+    underattack: '/characters/petch/6_lost.png',
+    win: '/characters/petch/7_petch_win.png',
+    lose: '/characters/petch/8_petch_lose.png',
+  },
+  ali: {
+    standby: '/characters/ali/1_standby.png',
+    punch: '/characters/ali/2_punch.png',
+    kick: '/characters/ali/3_kick.png',
+    flykick: '/characters/ali/4_attack.png',
+    attack: '/characters/ali/4_attack.png',
+    dodge: '/characters/ali/5_block.png',
+    underattack: '/characters/ali/6_lost.png',
+    win: '/characters/ali/7_ali_win.png',
+    lose: '/characters/ali/8_ali_lose.png',
   },
 }
 
@@ -585,7 +629,7 @@ const GENERIC_STATES = {
     duration: null,
     loop: true,
     interruptible: false,
-    cssClass: 'ko-fx',
+    cssClass: '',
   },
   TAUNT: {
     pose: 'standby',
@@ -599,7 +643,7 @@ const GENERIC_STATES = {
     duration: 2000,
     loop: false,
     interruptible: false,
-    cssClass: 'ko-fx',
+    cssClass: '',
   },
   SUPER: {
     pose: 'attack',
@@ -613,7 +657,28 @@ const GENERIC_STATES = {
   },
 }
 
+/** Block sprite is shared Malee art — use standby for other generic fighters. */
+const GENERIC_BLOCK_STANDBY = {
+  BLOCK: {
+    pose: 'standby',
+    duration: null,
+    loop: true,
+    interruptible: true,
+    cssClass: '',
+  },
+  DODGE: {
+    pose: 'standby',
+    duration: 500,
+    loop: false,
+    interruptible: false,
+    cssClass: '',
+  },
+}
+
 const CHARACTER_OVERRIDES = {
+  ali: GENERIC_BLOCK_STANDBY,
+  somchai: GENERIC_BLOCK_STANDBY,
+  petch: GENERIC_BLOCK_STANDBY,
   xiaoming: {
     KICK: { range: 140 },
     SPECIAL: { hitFrame: 190 },
@@ -662,9 +727,13 @@ for (const charId of ['nong_nut', 'xiaoming']) {
 
 export const FIGHT_CHARACTERS = Object.keys(CHARACTER_POSES)
 
+export const OPPONENT_COUNT = FIGHT_CHARACTERS.filter((id) => id !== 'nong_nut').length
+
 export function getStateConfig(characterId, state) {
   const states = CHARACTER_STATES[characterId] || GENERIC_STATES
-  return states[state] || GENERIC_STATES[state] || GENERIC_STATES.IDLE
+  const base = states[state] || GENERIC_STATES[state] || GENERIC_STATES.IDLE
+  const patch = CHARACTER_OVERRIDES[characterId]?.[state]
+  return patch ? { ...base, ...patch } : base
 }
 
 export function getAiTiming(characterId, hpRatio = 1) {

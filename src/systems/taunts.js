@@ -10,6 +10,10 @@ export const CHARACTER_TAUNTS = {
   xiaoming: { label: 'cap adjust', anim: 'walkBob 0.5s ease-in-out infinite' },
   rajesh: { label: 'namaste bow', anim: 'rajeshBob 1s ease-in-out infinite' },
   dmitri: { label: 'flex', anim: 'dmitriBob 0.6s ease-in-out infinite' },
+  somchai: { label: 'radio call', anim: 'walkBob 0.5s ease-in-out infinite' },
+  malee: { label: 'knife sharpen', anim: 'walkBob 0.5s ease-in-out infinite' },
+  petch: { label: 'sash wave', anim: 'winBounce 0.6s ease-in-out infinite' },
+  ali: { label: 'watch check', anim: 'walkBob 0.5s ease-in-out infinite' },
 }
 
 export class TauntSystem {

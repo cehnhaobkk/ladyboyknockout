@@ -1,32 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { CHARACTER_POSES, FIGHT_CHARACTERS } from './characterConfig'
+import { preloadSpriteBounds } from './pixelScale'
 
 const globalAssetCache = {}
 
-export function useFighterAssets(characterId) {
-  const [assets, setAssets] = useState(globalAssetCache[characterId] || {})
-  const [loaded, setLoaded] = useState(Boolean(globalAssetCache[characterId]))
-
-  useEffect(() => {
-    const poses = CHARACTER_POSES[characterId]
-    if (!poses) {
-      setLoaded(true)
-      return undefined
-    }
-
-    if (globalAssetCache[characterId]) {
-      setAssets(globalAssetCache[characterId])
-      setLoaded(true)
-      return undefined
-    }
-
+function resolveFighterAssets(characterId) {
+  const poses = CHARACTER_POSES[characterId]
+  if (!poses) {
+    return { assets: {}, loaded: false }
+  }
+  if (!globalAssetCache[characterId]) {
     globalAssetCache[characterId] = { ...poses }
-    setAssets(globalAssetCache[characterId])
-    setLoaded(true)
-    return undefined
-  }, [characterId])
+  }
+  return { assets: globalAssetCache[characterId], loaded: true }
+}
 
-  return { assets, loaded }
+export function useFighterAssets(characterId) {
+  return useMemo(() => resolveFighterAssets(characterId), [characterId])
 }
 
 export function preloadAllFighterAssets() {
@@ -35,6 +25,7 @@ export function preloadAllFighterAssets() {
     if (!poses || globalAssetCache[charId]) return
     globalAssetCache[charId] = { ...poses }
     Object.values(poses).forEach((src) => {
+      preloadSpriteBounds(src)
       const img = new Image()
       img.src = src
     })
