@@ -6,8 +6,11 @@ import Fighter from './components/Fighter'
 import HitSpark from './components/HitSpark'
 import MobileRotateOverlay from './components/MobileRotateOverlay'
 import TouchControls from './components/TouchControls'
+import FightMusicToggle from './components/FightMusicToggle'
+import MobCharSelectPortrait from './components/MobCharSelectPortrait'
 import TitleScreen from './screens/TitleScreen'
 import useMobileLandscape from './hooks/useMobileLandscape'
+import useFightMusic from './hooks/useFightMusic'
 import {
   getFighterVisualScale,
   UNIFIED_FIGHTER_HEIGHT_RATIO,
@@ -143,6 +146,10 @@ function getFunnyLine(fighterId, won) {
       win: 'Dmitri bought the arena. He is renaming it after himself.',
       lose: 'Impossible. Dmitri blames the vodka. All 3 bottles.',
     },
+    nong_nut: {
+      win: 'Another tourist learned the hard way. Nong Nut remains undefeated. 💅',
+      lose: 'Even the Queen has off nights. They always find out eventually.',
+    },
   }
   if (!won) {
     return lines[fighterId]?.lose || 'Never try, never know. Now you know. Bye. 💅'
@@ -154,8 +161,8 @@ function getScoreLabel(score) {
   if (score > 5000) return 'WORTHY OPPONENT 🙏'
   if (score > 3000) return 'IMPRESSIVE MOVES'
   if (score > 1500) return 'SOLID EFFORT'
-  if (score > 500) return 'NOT BAD FOR A FARANG'
-  return 'TOURIST PERFORMANCE'
+  if (score > 500) return 'DECENT KNOCKOUTS'
+  return 'QUEEN IN TRAINING'
 }
 
 /** Street Fighter–style shuffle indices, ending on finalIndex */
@@ -189,7 +196,7 @@ function getFateStepDelay(stepIndex, totalSteps) {
 
 function GameOverScreen({
   result,
-  playerFighter,
+  opponentFighter,
   score,
   onRematch,
   onNewFight,
@@ -199,9 +206,9 @@ function GameOverScreen({
   const playerWon = result === 'win'
   const scoreLabel = getScoreLabel(score)
   const winnerPoseImg = playerWon
-    ? getGameOverPose(playerFighter.id, true)
-    : getGameOverPose('nong_nut', true)
-  const winnerName = playerWon ? playerFighter.name.toUpperCase() : 'NONG NUT'
+    ? getGameOverPose(PLAYER.id, true)
+    : getGameOverPose(opponentFighter.id, true)
+  const winnerName = playerWon ? PLAYER.name.toUpperCase() : opponentFighter.name.toUpperCase()
 
   useEffect(() => {
     overlayRef.current?.scrollTo(0, 0)
@@ -219,12 +226,12 @@ function GameOverScreen({
             <div className="go-headline go-headline-win">YOU WIN!</div>
             <div className="go-score">SCORE: {score.toLocaleString()}</div>
             <div className="go-score-label">{scoreLabel}</div>
-            <div className="go-message">{getFunnyLine(playerFighter.id, true)}</div>
+            <div className="go-message">{getFunnyLine(PLAYER.id, true)}</div>
           </>
         ) : (
           <>
-            <div className="go-headline go-headline-lose">NONG NUT WINS! 💅</div>
-            <div className="go-message go-message-lose">&ldquo;{PLAYER.tagline}&rdquo;</div>
+            <div className="go-headline go-headline-lose">{opponentFighter.name.toUpperCase()} WINS!</div>
+            <div className="go-message go-message-lose">{getFunnyLine(opponentFighter.id, true)}</div>
           </>
         )}
         <img
@@ -233,8 +240,8 @@ function GameOverScreen({
           alt={winnerName}
           onError={(e) => {
             e.currentTarget.src = playerWon
-              ? playerFighter.img || publicUrl(`/characters/${playerFighter.id}.png`)
-              : PLAYER.img
+              ? PLAYER.img
+              : opponentFighter.img || publicUrl(`/characters/${opponentFighter.id}.png`)
           }}
         />
         <div className="go-actions">
@@ -285,8 +292,6 @@ const FIGHTER_TOP_PADDING = {
 
 const FIGHTER_MAX_HEIGHT = 220
 const ARENA_TOP_PADDING = 12
-/** Player-side fighter renders 10% smaller than enemy for visual balance. */
-const PLAYER_FIGHTER_SCALE = 0.9
 
 function parseGroundPercent(groundBottomPercent) {
   const s = String(groundBottomPercent)
@@ -329,7 +334,7 @@ function computeFighterSizes(arenaH, groundBottomPercent, playerId, enemyId) {
   const baseHeight = getUnifiedFightHeight(arenaH, groundBottomPercent, playerId, enemyId)
   const playerFighterHeight = Math.max(
     80,
-    Math.round(baseHeight * getFighterVisualScale(playerId) * PLAYER_FIGHTER_SCALE),
+    Math.round(baseHeight * getFighterVisualScale(playerId)),
   )
   const enemyFighterHeight = Math.max(
     80,
@@ -397,16 +402,20 @@ function getEnemyById(id) {
   return ENEMIES.find((e) => e.id === id) || ENEMIES[0]
 }
 
+function shouldFlipOpponentForCharSelect(enemyId) {
+  return Boolean(enemyId && enemyId !== 'dmitri')
+}
+
 function getFighterById(id) {
   if (id === PLAYER.id) return PLAYER
   return getEnemyById(id)
 }
 
-function createFightState(playerId, stageId) {
-  const playerFighter = getFighterById(playerId)
+function createFightState(opponentId, stageId) {
+  const opponent = getFighterById(opponentId)
   return {
-    playerId,
-    enemyId: PLAYER.id,
+    playerId: PLAYER.id,
+    enemyId: opponentId,
     stageId,
     arenaW: 800,
     arenaH: 600,
@@ -426,10 +435,10 @@ function createFightState(playerId, stageId) {
     ey: 0,
     evx: 0,
     evy: 0,
-    php: playerFighter.hp,
-    pmax: playerFighter.hp,
-    ehp: PLAYER.hp,
-    emax: PLAYER.hp,
+    php: PLAYER.hp,
+    pmax: PLAYER.hp,
+    ehp: opponent.hp,
+    emax: opponent.hp,
     playerAnim: 'idle',
     enemyAnim: 'idle',
     playerAnimUntil: 0,
@@ -653,16 +662,18 @@ body {
   color: #999;
 }
 .mob-vs {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(0.5rem, 2.5vw, 1.25rem);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: min(50vh, 50dvh, 230px) auto;
+  align-items: end;
+  justify-items: center;
+  column-gap: clamp(0.35rem, 2vw, 0.85rem);
+  row-gap: 0.15rem;
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  margin-top: -55px;
-  padding: 0.25rem 0;
+  margin-top: 0;
+  padding: 0.15rem 0 0.35rem;
   box-sizing: border-box;
 }
 .mob-picker-section {
@@ -671,7 +682,7 @@ body {
   align-items: center;
   flex-shrink: 0;
   width: 100%;
-  margin-top: -80px;
+  margin-top: 0;
   gap: 0.12rem;
   box-sizing: border-box;
 }
@@ -739,48 +750,55 @@ body {
   background: rgba(255, 255, 255, 0.04);
 }
 .mob-vs-slot {
-  flex: 1 1 0;
-  min-width: 0;
-  width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  height: 100%;
-  gap: clamp(0.1rem, 0.8vh, 0.25rem);
-  box-sizing: border-box;
+  display: contents;
+}
+.mob-vs-champ .mob-vs-figure,
+.mob-vs-enemy .mob-vs-figure {
+  grid-row: 1;
+  align-self: end;
+  width: 100%;
+}
+.mob-vs-champ .mob-vs-figure {
+  grid-column: 1;
+}
+.mob-vs-enemy .mob-vs-figure {
+  grid-column: 3;
+}
+.mob-vs-champ .mob-vs-meta,
+.mob-vs-enemy .mob-vs-meta {
+  grid-row: 2;
+  width: 100%;
+  height: clamp(2.85rem, 10.5vh, 3.35rem);
+  min-height: clamp(2.85rem, 10.5vh, 3.35rem);
+  justify-content: flex-start;
+  overflow: hidden;
+}
+.mob-vs-champ .mob-vs-meta {
+  grid-column: 1;
+}
+.mob-vs-enemy .mob-vs-meta {
+  grid-column: 3;
 }
 .mob-vs-enemy {
-  justify-content: center;
-  align-items: center;
-  padding: 0.15rem;
+  padding: 0;
 }
 .mob-vs-enemy:not(.has-pick) {
   background: none;
   border: none;
   box-shadow: none;
-  min-height: 0;
-  justify-content: center;
-}
-.mob-vs-enemy.has-pick {
-  justify-content: center;
-  gap: clamp(0.1rem, 0.8vh, 0.25rem);
 }
 .mob-vs-figure {
-  flex: 0 0 auto;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   width: 100%;
-  min-height: min(52.8vh, 52.8dvh, 220px);
-}
-.mob-vs-enemy .mob-vs-meta {
-  min-height: clamp(2.35rem, 10.5vh, 3rem);
-  justify-content: flex-start;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
 }
 .mob-vs-placeholder-figure {
   align-items: flex-end;
+  justify-content: center;
 }
 .mob-vs-placeholder-q {
   font-size: clamp(1.75rem, 11vh, 3rem);
@@ -788,11 +806,24 @@ body {
   line-height: 1;
   font-family: inherit;
 }
-.mob-vs-figure img {
+.mob-vs-portrait {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.mob-vs-portrait.is-flipped {
+  transform: scaleX(-1);
+}
+.mob-vs-portrait img {
   width: auto;
   max-width: 100%;
-  max-height: min(52.8vh, 52.8dvh, 220px);
+  max-height: 100%;
   height: auto;
+  object-fit: contain;
+  object-position: bottom center;
+  display: block;
   image-rendering: pixelated;
   filter: drop-shadow(0 0 10px rgba(255, 0, 200, 0.45));
 }
@@ -805,14 +836,17 @@ body {
   text-align: center;
 }
 .mob-vs-champ {
-  padding: 0.15rem;
+  padding: 0;
 }
 .mob-vs-label {
-  flex: 0 0 auto;
+  grid-column: 2;
+  grid-row: 1;
   align-self: center;
+  justify-self: center;
   font-size: clamp(0.85rem, 5.5vh, 1.35rem);
   color: var(--neon-pink);
-  padding-bottom: 0;
+  padding: 0;
+  margin: 0;
 }
 .mob-vs-placeholder {
   font-size: clamp(0.34rem, 2.2vh, 0.44rem);
@@ -841,10 +875,10 @@ body {
   font-size: calc(clamp(0.32rem, 1.85vh, 0.4rem) + 1px);
   margin: 0.08rem auto 0;
   color: #fff;
-  line-height: 1.3;
+  line-height: 1.25;
   width: 100%;
   max-width: 100%;
-  white-space: nowrap;
+  white-space: normal;
   opacity: 0.92;
   text-align: center;
 }
@@ -1003,6 +1037,13 @@ body {
 }
 .char-select-screen .char-side.enemy-side img {
   width: min(38vw, 272px);
+}
+.char-select-opponent-flip {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+.char-select-opponent-flip img {
+  display: block;
 }
 .char-select-screen .char-side.enemy-side.selected img {
   width: min(38vw, 272px);
@@ -1424,6 +1465,43 @@ body {
   border-bottom: 1px solid #1a1a2e;
   box-sizing: border-box;
 }
+.fight-music-toggle {
+  position: fixed;
+  top: max(4.1rem, calc(env(safe-area-inset-top) + 3.4rem));
+  right: max(0.5rem, env(safe-area-inset-right));
+  z-index: 60;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 2px solid var(--neon-cyan);
+  background: rgba(0, 0, 0, 0.82);
+  color: var(--neon-cyan);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(77, 249, 255, 0.45);
+  pointer-events: auto;
+}
+.fight-music-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.fight-music-toggle:hover {
+  background: rgba(20, 10, 40, 0.95);
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+}
+.fight-music-toggle.is-muted {
+  border-color: #888;
+  color: #bbb;
+  box-shadow: none;
+}
+.fight-music-toggle.is-unavailable {
+  opacity: 0.55;
+}
 .hud-side { display: flex; flex-direction: column; gap: 0.2rem; }
 .hud-side.right { align-items: flex-end; }
 .hud-bar-row {
@@ -1671,7 +1749,7 @@ body {
   0%   { transform: rotate(0) translateY(0); opacity: 1; }
   30%  { transform: rotate(-20deg) translateY(10px); }
   60%  { transform: rotate(-60deg) translateY(20px); }
-  100% { transform: rotate(0deg) translateY(0); opacity: 1; }
+  100% { transform: rotate(-78deg) translateY(24%); opacity: 1; }
 }
 @keyframes dmitriBob {
   0%,100% { transform: translateY(0) scaleY(1); }
@@ -1776,7 +1854,7 @@ body {
 }
 @keyframes koFall {
   0% { transform: rotate(0deg) translateY(0); }
-  100% { transform: rotate(-85deg) translateY(10px); }
+  100% { transform: rotate(-85deg) translateY(28%); }
 }
 @keyframes winBounce {
   0%, 100% { transform: translateY(0); }
@@ -1790,21 +1868,14 @@ body {
 .fighter-image.hurt-fx { animation: hurtFlash 0.45s ease-out; }
 .fighter-image.ko-fx { animation: koFall 0.7s ease forwards; }
 .fighter-image.win-fx { animation: winBounce 0.45s ease-in-out infinite; }
-.fighter-image.dave-ko {
+.fighter-image.dave-ko,
+.fighter-image.dmitri-ko,
+.fighter-image.rajesh-ko,
+.fighter-image.xiaoming-ko {
   animation: none !important;
-  transform: none !important;
 }
 .fighter-image.kyle-ko {
   animation: kyleFall 0.5s ease forwards !important;
-  transform: none !important;
-}
-.fighter-image.dmitri-ko {
-  animation: none !important;
-  transform: none !important;
-}
-.fighter-image.rajesh-ko {
-  animation: none !important;
-  transform: none !important;
 }
 .hit-flash.gold { background: rgba(230, 120, 30, 0.5); }
 .hit-flash.cyan { background: rgba(0, 200, 255, 0.4); }
@@ -2300,6 +2371,15 @@ body.fight-active {
     padding: 0.2rem max(0.45rem, env(safe-area-inset-left)) 0.2rem max(0.45rem, env(safe-area-inset-right));
     padding-top: max(0.2rem, env(safe-area-inset-top));
   }
+  .fight-music-toggle {
+    top: calc(max(0.2rem, env(safe-area-inset-top)) + 50px);
+    width: 32px;
+    height: 32px;
+  }
+  .fight-music-icon {
+    width: 17px;
+    height: 17px;
+  }
   .hud-portrait {
     width: 22px;
     height: 22px;
@@ -2408,6 +2488,9 @@ export default function App() {
   const [mobileAdvancing, setMobileAdvancing] = useState(false)
 
   const isMobileLandscape = useMobileLandscape()
+  const fightMusicActive = screen === 'fight'
+  const { muted: fightMusicMuted, toggleMute: toggleFightMusic, hasMusic: fightMusicHasTrack } =
+    useFightMusic(fightMusicActive)
   const fightRef = useRef(null)
   const fateTimerRef = useRef(null)
   const stageFateTimerRef = useRef(null)
@@ -2645,7 +2728,7 @@ export default function App() {
 
     const fr = fightRef.current
     const playerDef = getFighterById(fr.playerId)
-    const champDef = PLAYER
+    const enemyDef = getFighterById(fr.enemyId)
 
     const syncSize = () => {
       const el = arenaRef.current
@@ -2819,13 +2902,13 @@ export default function App() {
       window.setTimeout(() => announceEnemyWin(), 1200)
     }
     const announceEnemyWin = () => {
-      fr.battleMsg = `${champDef.name.toUpperCase()} WINS! 💅`
+      fr.battleMsg = `${enemyDef.name.toUpperCase()} WINS!`
       fr.battleMsgUntil = performance.now() + 2200
       bumpHud()
       window.setTimeout(() => {
         const f = fightRef.current
         if (!f) return
-        f.battleMsg = champDef.taunt
+        f.battleMsg = enemyDef.taunt ? `“${enemyDef.taunt}”` : ''
         f.battleMsgUntil = performance.now() + 2800
         bumpHud()
       }, 900)
@@ -2918,7 +3001,7 @@ export default function App() {
       else fr.enemyCombo = 1
       fr.lastHitOnPlayer = now
       const mult = fr.enemyCombo >= COMBO_MIN_HITS ? COMBO_MULT : 1
-      const raw = rollDamage(champDef.atk, isSpecial)
+      const raw = rollDamage(enemyDef.atk, isSpecial)
       let dmg = raw * mult
       if (fr.playerBlocking) dmg *= 0.4
       fr.php = Math.max(0, fr.php - dmg)
@@ -2982,8 +3065,8 @@ export default function App() {
           f.round += 1
           f.php = playerDef.hp
           f.pmax = playerDef.hp
-          f.ehp = champDef.hp
-          f.emax = champDef.hp
+          f.ehp = enemyDef.hp
+          f.emax = enemyDef.hp
           f.timeLeft = ROUND_TIME
           f.roundActive = true
           f.px = f.arenaW * 0.22
@@ -3036,8 +3119,6 @@ export default function App() {
         if (pressed.has('KeyL')) {
           if (setFighterState('player', 'SPECIAL')) {
             scheduleAttack(f, 'player', fr.playerId, 'SPECIAL', now)
-            if (fr.playerId === 'dave') triggerBeerBellyBash(now)
-            if (fr.playerId === 'kyle') triggerRedPillRush(now, true)
           }
         }
         if (pressed.has('KeyI')) {
@@ -3315,10 +3396,21 @@ export default function App() {
               &lt; Back
             </button>
             <h1 className="neon-title stage-select-title">
-              Pick a fighter to challenge Nong Nut
+              Pick your opponent
             </h1>
           </div>
           <div className="mob-vs">
+            <div className="mob-vs-slot mob-vs-champ">
+              <div className="mob-vs-figure">
+                <MobCharSelectPortrait src={PLAYER.img} alt={PLAYER.name} />
+              </div>
+              <div className="mob-vs-meta">
+                <p className="mob-vs-name">{PLAYER.name}</p>
+                <p className="mob-vs-tagline">{PLAYER.title}</p>
+                <p className="mob-vs-desc">&ldquo;{PLAYER.tagline}&rdquo;</p>
+              </div>
+            </div>
+            <div className="mob-vs-label">VS</div>
             <div
               className={`mob-vs-slot mob-vs-enemy ${mobCharPreviewActive ? 'has-pick' : ''}`}
             >
@@ -3343,7 +3435,11 @@ export default function App() {
                   return (
                     <>
                       <div className="mob-vs-figure">
-                        <img src={e.img} alt={e.name} />
+                        <MobCharSelectPortrait
+                          src={e.img}
+                          alt={e.name}
+                          flipped={shouldFlipOpponentForCharSelect(e.id)}
+                        />
                       </div>
                       <div className="mob-vs-meta">
                         <p className="mob-vs-name">{e.name}</p>
@@ -3370,17 +3466,6 @@ export default function App() {
                 </>
               )}
             </div>
-            <div className="mob-vs-label">VS</div>
-            <div className="mob-vs-slot mob-vs-champ">
-              <div className="mob-vs-figure">
-                <img src={PLAYER.img} alt={PLAYER.name} />
-              </div>
-              <div className="mob-vs-meta">
-                <p className="mob-vs-name">{PLAYER.name}</p>
-                <p className="mob-vs-tagline">{PLAYER.title}</p>
-                <p className="mob-vs-desc">&ldquo;{PLAYER.tagline}&rdquo;</p>
-              </div>
-            </div>
           </div>
           <div className="mob-picker-section">
             <div className={`mob-picker ${fateRolling ? 'fate-shuffling' : ''}`}>
@@ -3393,7 +3478,9 @@ export default function App() {
                   onClick={() => handleEnemyPick(e.id)}
                   aria-label={e.name}
                 >
-                  <span className="mob-picker-headshot">
+                  <span
+                    className={`mob-picker-headshot ${shouldFlipOpponentForCharSelect(e.id) ? 'char-select-opponent-flip' : ''}`}
+                  >
                     <img src={e.mobHeadshot || e.img} alt="" />
                   </span>
                 </button>
@@ -3422,7 +3509,7 @@ export default function App() {
         <div className="menu-dark char-select-screen">
           <div className="char-select-header">
             <h1 className="neon-title char-select-title">LADYBOY KNOCKOUT</h1>
-            <p className="char-select-subtitle">Pick a fighter to challenge Nong Nut</p>
+            <p className="char-select-subtitle">Pick your opponent</p>
           </div>
           <div className="char-select-body">
             <div className={`enemy-grid ${fateRolling ? 'fate-shuffling' : ''}`}>
@@ -3440,7 +3527,11 @@ export default function App() {
                   }}
                   onClick={() => handleEnemyPick(e.id)}
                 >
-                  <img src={e.img} alt="" />
+                  <span
+                    className={shouldFlipOpponentForCharSelect(e.id) ? 'char-select-opponent-flip' : undefined}
+                  >
+                    <img src={e.img} alt="" />
+                  </span>
                   <p className="enemy-card-name">{e.name}</p>
                 </button>
               ))}
@@ -3455,6 +3546,13 @@ export default function App() {
               </button>
             </div>
             <div className="vs-row">
+              <div className="char-side player-side">
+                <img src={PLAYER.img} alt={PLAYER.name} />
+                <p className="char-name">{PLAYER.name}</p>
+                <p className="char-tagline">The Knockout Queen</p>
+                <p className="char-tagline-secondary">"They always find out the hard way!"</p>
+              </div>
+              <div className="vs-big">VS</div>
               <div
                 className={`char-side enemy-side ${selectedEnemyId || fatePreviewId ? 'selected' : ''} ${fateRolling ? 'fate-rolling' : ''} ${!fateRolling && selectedEnemyId ? 'fate-locked' : ''}`}
               >
@@ -3467,7 +3565,13 @@ export default function App() {
                     if (!e) return <p className="char-placeholder">Pick a fighter</p>
                     return (
                       <>
-                        <img src={e.img} alt={e.name} />
+                        <span
+                          className={
+                            shouldFlipOpponentForCharSelect(e.id) ? 'char-select-opponent-flip' : undefined
+                          }
+                        >
+                          <img src={e.img} alt={e.name} />
+                        </span>
                         <p className="char-name">{e.name}</p>
                         <p className="char-title">{e.title}</p>
                         {fateRolling ? (
@@ -3481,13 +3585,6 @@ export default function App() {
                 ) : (
                   <p className="char-placeholder">Pick a fighter</p>
                 )}
-              </div>
-              <div className="vs-big">VS</div>
-              <div className="char-side player-side">
-                <img src={PLAYER.img} alt={PLAYER.name} />
-                <p className="char-name">{PLAYER.name}</p>
-                <p className="char-tagline">The Knockout Queen</p>
-                <p className="char-tagline-secondary">"They always find out the hard way!"</p>
               </div>
             </div>
           </div>
@@ -3558,7 +3655,7 @@ export default function App() {
           <div className="stage-select-header">
             <h1 className="neon-title stage-select-title">SELECT STAGE</h1>
             <p className="stage-select-subtitle">
-              {enemy.name} vs {PLAYER.name}
+              {PLAYER.name} vs {enemy.name}
             </p>
           </div>
           <div className={`stage-grid ${stageFateRolling ? 'fate-shuffling' : ''}`}>
@@ -3615,21 +3712,26 @@ export default function App() {
 
       {screen === 'fight' && fr && stage && (() => {
         const playerDef = getFighterById(fr.playerId)
-        const enemyDef = getEnemyById(fr.playerId)
+        const enemyDef = getFighterById(fr.enemyId)
         const now = performance.now()
         const playerHitFlash = fr.playerHitFlashUntil > now
         const enemyHitFlash = fr.enemyHitFlashUntil > now
         return (
         <div className="fight-arena">
+          <FightMusicToggle
+            muted={fightMusicMuted}
+            onToggle={toggleFightMusic}
+            hasMusic={fightMusicHasTrack}
+          />
           <div className="fight-hud">
             <div className="hud-side">
               <span style={{ color: varNeonPink() }}>{playerDef.name}</span>
               <div className="hud-bar-row">
                 <img
                   className="hud-portrait"
-                  src={enemyDef.img}
+                  src={playerDef.img}
                   alt=""
-                  style={{ borderColor: enemyDef.color || varNeonPink() }}
+                  style={{ borderColor: varNeonPink() }}
                 />
                 <div className="bar-wrap">
                   <div
@@ -3651,7 +3753,7 @@ export default function App() {
               <div className="stage-label-hud">{stage.name.toUpperCase()}</div>
             </div>
             <div className="hud-side right">
-              <span style={{ color: '#faa' }}>{PLAYER.name}</span>
+              <span style={{ color: enemyDef.color || '#faa' }}>{enemyDef.name}</span>
               <div className="hud-bar-row">
                 <div className="bar-wrap">
                   <div
@@ -3659,7 +3761,12 @@ export default function App() {
                     style={{ width: `${(fr.ehp / fr.emax) * 100}%` }}
                   />
                 </div>
-                <img className="hud-portrait enemy" src={PLAYER.img} alt="" />
+                <img
+                  className="hud-portrait enemy"
+                  src={enemyDef.img}
+                  alt=""
+                  style={{ borderColor: enemyDef.color || '#faa' }}
+                />
               </div>
               <div className="pips">
                 <div className={`pip ${fr.ew > 0 ? 'on' : ''}`} />
@@ -3703,7 +3810,7 @@ export default function App() {
               </div>
               <div className="fighter" ref={enemyWrapRef}>
                 <Fighter
-                  character={PLAYER.id}
+                  character={fr.enemyId}
                   state={enemyFighterState}
                   flipped={fr.enemyFacing < 0}
                   height={enemyFighterHeight}
@@ -3726,7 +3833,7 @@ export default function App() {
       {screen === 'gameOver' && stage && enemy && (
         <GameOverScreen
           result={matchWinner === 'player' ? 'win' : 'lose'}
-          playerFighter={enemy}
+          opponentFighter={enemy}
           score={goScore}
           stageBg={stage.img}
           onRematch={() => {

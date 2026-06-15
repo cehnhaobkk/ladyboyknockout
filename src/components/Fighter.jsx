@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getStateConfig } from '../fighter/characterConfig'
 import { useFighterAssets } from '../fighter/useFighterAssets'
-import { snapPixelHeight, snapPixelWidth } from '../fighter/pixelScale'
+import { getKoGroundOffset, snapPixelHeight, snapPixelWidth } from '../fighter/pixelScale'
 
 export default function Fighter({ character, state, flipped, height = 180, hitFlash = false }) {
   const { assets, loaded } = useFighterAssets(character)
@@ -41,11 +41,12 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
   const koClass = config.koClass || ''
   const cssClass = config.cssClass || ''
   const cssAnimation = config.cssAnimation || 'none'
+  const isKo = displayState === 'KO'
 
   const displayHeight = snapPixelHeight(nativeSize.h, height)
   const displayWidth = snapPixelWidth(nativeSize.w, nativeSize.h, displayHeight)
+  const koGroundOffset = isKo ? getKoGroundOffset(character, displayHeight) : 0
 
-  const koMargin = koClass === 'dave-ko' ? -20 : koClass === 'kyle-ko' ? -25 : koClass === 'dmitri-ko' ? -15 : koClass === 'rajesh-ko' ? -10 : 0
   const koFilter =
     koClass === 'kyle-ko'
       ? 'brightness(0.65)'
@@ -58,6 +59,13 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
   const hitFilter = hitFlash ? 'brightness(8) saturate(0)' : null
   const imgFilter = hitFilter || (koFilter !== 'none' ? koFilter : undefined)
 
+  const wrapTransform = [
+    flipped ? 'scaleX(-1)' : null,
+    koGroundOffset ? `translateY(${koGroundOffset}px)` : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <div
       className="fighter-wrap"
@@ -65,7 +73,7 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
         position: 'relative',
         width: displayWidth ? `${displayWidth}px` : undefined,
         height: `${displayHeight}px`,
-        transform: flipped ? 'scaleX(-1)' : undefined,
+        transform: wrapTransform || undefined,
         transformOrigin: 'bottom center',
       }}
     >
@@ -89,7 +97,6 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
           display: 'block',
           userSelect: 'none',
           pointerEvents: 'none',
-          marginBottom: koMargin,
           verticalAlign: 'bottom',
         }}
       />

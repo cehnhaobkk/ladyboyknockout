@@ -120,22 +120,22 @@ export default function TitleScreen({ onStart }) {
           <section className={styles.section}>
             <h2 className={styles.sectionHeading}>ABOUT THE GAME</h2>
             <p className={styles.sectionBody}>
-              A retro arcade fighter set on the streets of Thailand. Pick your farang fighter —
-              Dave the Pattaya Geezer, Kyle the Passport Bro, Xiaoming the Tour Boss, Rajesh the
-              Delhi Dynamo, or Dmitri the Phuket Patriarch — then step into the ring against Nong
-              Nut, the Knockout Queen.
+              A retro arcade fighter set on the streets of Thailand. You are Nong Nut, the Knockout
+              Queen — pick your farang opponent from Dave the Pattaya Geezer, Kyle the Passport Bro,
+              Xiaoming the Tour Boss, Rajesh the Delhi Dynamo, or Dmitri the Phuket Patriarch, then
+              teach them the hard way.
             </p>
             <p className={styles.sectionBody}>
               Win two out of three rounds across Bangkok, Pattaya, Phuket, or Chiang Mai. Chain
-              combos, land specials, and survive her signature moves. Choose your rival or let
-              fate decide. They always find out the hard way. 💅
+              combos, land your Stiletto Storm special, and shut down their signature moves. Choose
+              your rival or let fate decide. They always find out the hard way. 💅
             </p>
           </section>
 
           <section className={styles.section}>
             <h2 className={styles.sectionHeading}>HOW TO PLAY</h2>
             <p className={styles.sectionBody}>
-              Tap start, pick a fighter, then select a stage. Each character has unique stats,
+              Tap start, pick your opponent, then select a stage. Each rival has unique stats,
               taunts, and a signature special. Block to reduce damage. Build combos within 1.5
               seconds for bonus hits and score.
             </p>

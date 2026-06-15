@@ -16,10 +16,9 @@ const FIGHTER_BODY_HEIGHT_RATIO = {
 
 const DAVE_BODY_HEIGHT_RATIO = REFERENCE_BODY_HEIGHT_RATIO
 
-/** Fine-tune fighters whose artwork reads smaller/larger than bbox suggests. */
+/** Compensate for extra transparent padding in specific sprite sheets. */
 const FIGHTER_SCALE_TUNING = {
-  dave: 1.05,
-  dmitri: 1.05,
+  nong_nut: 1.12,
 }
 
 /** Normalize on-screen body size so every fighter reads the same height as Dave. */
@@ -54,4 +53,19 @@ export function snapPixelHeight(nativeHeight, targetHeight) {
 export function snapPixelWidth(nativeWidth, nativeHeight, displayHeight) {
   if (!nativeWidth || !nativeHeight) return undefined
   return Math.round((nativeWidth * displayHeight) / nativeHeight)
+}
+
+/** Shift KO lose poses down so fallen fighters sit on the stage floor. */
+const KO_GROUND_OFFSET_RATIO = {
+  dave: 0.24,
+  kyle: 0.28,
+  xiaoming: 0.22,
+  rajesh: 0.24,
+  dmitri: 0.22,
+  nong_nut: 0.18,
+}
+
+export function getKoGroundOffset(characterId, displayHeight) {
+  const ratio = KO_GROUND_OFFSET_RATIO[characterId] ?? 0.22
+  return Math.round(displayHeight * ratio)
 }

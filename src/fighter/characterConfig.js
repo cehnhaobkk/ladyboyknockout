@@ -513,6 +513,7 @@ const CHARACTER_OVERRIDES = {
   xiaoming: {
     KICK: { range: 140 },
     SPECIAL: { hitFrame: 190 },
+    KO: { koClass: 'xiaoming-ko' },
   },
   nong_nut: {
     PUNCH: { damage: 20, range: 130 },
