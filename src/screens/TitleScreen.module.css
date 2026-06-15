@@ -269,6 +269,7 @@
   grid-column: 3;
   justify-self: end;
   align-self: end;
+  justify-content: flex-end;
   pointer-events: auto;
   font-family: 'Press Start 2P', monospace;
   color: rgba(255, 229, 0, 0.82);
@@ -278,21 +279,6 @@
   cursor: pointer;
   text-align: right;
   transition: color 0.15s ease;
-}
-
-.aboutBtn,
-.fullscreenBtn {
-  font-size: var(--chrome-corner-font-size);
-  letter-spacing: 0.05em;
-  line-height: 1.65;
-  white-space: nowrap;
-}
-
-.chromeBtnGlyph {
-  display: inline-block;
-  font-size: 0.82em;
-  line-height: 1;
-  vertical-align: 0.04em;
 }
 
 .fullscreenBtn:hover {
@@ -387,6 +373,35 @@
 
 .aboutBtn:hover {
   color: #fff176;
+}
+
+.aboutBtn,
+.fullscreenBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  font-size: var(--chrome-corner-font-size);
+  letter-spacing: 0.05em;
+  line-height: 1.65;
+  white-space: nowrap;
+}
+
+.chromeBtnText {
+  line-height: 1.65;
+}
+
+.chromeBtnGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.88em;
+  line-height: 1;
+}
+
+.chromeBtnGlyphEmoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 0.95em;
 }
 
 .aboutOverlay {
@@ -782,12 +797,10 @@
     column-gap: 0.75rem;
   }
 
+  .aboutBtn,
   .fullscreenBtn {
     padding: 0.45rem 0.2rem;
     min-height: 2.75rem;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
   }
 
   .marquee {
@@ -802,13 +815,6 @@
   .advisory {
     line-height: 1.65;
     max-width: 94vw;
-  }
-
-  .aboutBtn {
-    padding: 0.45rem 0.2rem;
-    min-height: 2.75rem;
-    display: flex;
-    align-items: flex-end;
   }
 
   .welcomeText {
@@ -870,12 +876,6 @@
   .fullscreenBtn {
     padding: 0.4rem 0.15rem;
     min-height: 2.5rem;
-    display: flex;
-    align-items: flex-end;
-  }
-
-  .fullscreenBtn {
-    justify-content: flex-end;
   }
 
   .welcomeText {
