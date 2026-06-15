@@ -9,6 +9,7 @@
   max-height: var(--app-height, 100dvh);
   --chrome-text-size: clamp(5px, min(1.8vw, 1.4vh), 11px);
   --chrome-corner-font-size: clamp(6px, min(1.1vw, 1.6vh), 10px);
+  --chrome-line-height: 1.8;
   --title-floor-line: calc(0.85rem + 1.125rem + 0.45rem);
 }
 
@@ -378,25 +379,25 @@
 .aboutBtn,
 .fullscreenBtn {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.45em;
   font-size: var(--chrome-corner-font-size);
   letter-spacing: 0.05em;
-  line-height: 1.65;
+  line-height: var(--chrome-line-height, 1.8);
   white-space: nowrap;
 }
 
 .chromeBtnText {
-  line-height: 1.65;
+  line-height: inherit;
 }
 
 .chromeBtnGlyph {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
   flex-shrink: 0;
   font-size: 0.88em;
-  line-height: 1;
+  line-height: inherit;
 }
 
 .chromeBtnGlyphEmoji {
@@ -652,7 +653,7 @@
   z-index: 5;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: end;
+  align-items: last baseline;
   padding: 0 1.1rem max(1rem, calc(0.85rem + env(safe-area-inset-bottom, 0px)));
   pointer-events: none;
 }
@@ -746,7 +747,7 @@
   font-size: var(--chrome-text-size);
   color: rgba(255, 255, 255, 0.42);
   letter-spacing: 0.05em;
-  line-height: 1.8;
+  line-height: var(--chrome-line-height, 1.8);
   padding: 0;
   max-width: min(92vw, 42rem);
   justify-self: center;
@@ -770,6 +771,7 @@
   .screen {
     --chrome-text-size: clamp(5px, 1.7vw, 8px);
     --chrome-corner-font-size: clamp(6px, 2vw, 9px);
+    --chrome-line-height: 1.65;
   }
 
   .content {
@@ -797,12 +799,6 @@
     column-gap: 0.75rem;
   }
 
-  .aboutBtn,
-  .fullscreenBtn {
-    padding: 0.45rem 0.2rem;
-    min-height: 2.75rem;
-  }
-
   .marquee {
     padding-top: max(clamp(0.22rem, 0.8vh, 0.45rem), env(safe-area-inset-top, 0px));
     padding-bottom: clamp(0.22rem, 0.8vh, 0.45rem);
@@ -813,7 +809,6 @@
   }
 
   .advisory {
-    line-height: 1.65;
     max-width: 94vw;
   }
 
@@ -835,6 +830,7 @@
   .screen {
     --chrome-text-size: clamp(5px, min(1.2vw, 2vh), 10px);
     --chrome-corner-font-size: clamp(7px, min(1.35vw, 2.4vh), 11px);
+    --chrome-line-height: 1.55;
     --title-floor-line: calc(0.7rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
   }
 
@@ -872,12 +868,6 @@
     bottom: var(--title-floor-line);
   }
 
-  .aboutBtn,
-  .fullscreenBtn {
-    padding: 0.4rem 0.15rem;
-    min-height: 2.5rem;
-  }
-
   .welcomeText {
     font-size: clamp(6px, min(1.2vw, 2vh), 9px);
   }
@@ -887,7 +877,6 @@
   }
 
   .advisory {
-    line-height: 1.55;
     letter-spacing: 0.03em;
     max-width: min(88vw, 36rem);
   }
@@ -910,6 +899,7 @@
   .screen {
     --chrome-text-size: clamp(5px, min(1.1vw, 1.9vh), 9px);
     --chrome-corner-font-size: var(--chrome-text-size);
+    --chrome-line-height: 1.55;
     --title-floor-line: calc(0.6rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
   }
 
