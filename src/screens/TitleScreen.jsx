@@ -118,14 +118,22 @@ export default function TitleScreen({ onStart }) {
 
       <div className={styles.chrome}>
         <button type="button" className={styles.aboutBtn} onClick={openAbout}>
-          ABOUT THE GAME ▶
+          ABOUT THE GAME <span className={styles.chromeBtnGlyph} aria-hidden>▶</span>
         </button>
         <p className={styles.advisory}>
           PG15+ — PARENTAL ADVISORY | © Made with <span className={styles.heart}>♥</span> in BKK
         </p>
         {showFullscreenBtn && (
           <button type="button" className={styles.fullscreenBtn} onClick={handleFullscreen}>
-            {isIOS() ? '📲 HIDE SAFARI BAR' : '⛶ FULL SCREEN'}
+            {isIOS() ? (
+              <>
+                <span className={styles.chromeBtnGlyph} aria-hidden>📲</span> HIDE SAFARI BAR
+              </>
+            ) : (
+              <>
+                <span className={styles.chromeBtnGlyph} aria-hidden>⛶</span> FULL SCREEN
+              </>
+            )}
           </button>
         )}
       </div>

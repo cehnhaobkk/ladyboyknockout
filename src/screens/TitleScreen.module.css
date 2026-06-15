@@ -8,6 +8,7 @@
   height: var(--app-height, 100dvh);
   max-height: var(--app-height, 100dvh);
   --chrome-text-size: clamp(5px, min(1.8vw, 1.4vh), 11px);
+  --chrome-corner-font-size: clamp(6px, min(1.1vw, 1.6vh), 10px);
   --title-floor-line: calc(0.85rem + 1.125rem + 0.45rem);
 }
 
@@ -270,17 +271,28 @@
   align-self: end;
   pointer-events: auto;
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(6px, min(1.1vw, 1.6vh), 10px);
   color: rgba(255, 229, 0, 0.82);
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
-  letter-spacing: 0.05em;
-  line-height: 1.8;
-  white-space: nowrap;
   text-align: right;
   transition: color 0.15s ease;
+}
+
+.aboutBtn,
+.fullscreenBtn {
+  font-size: var(--chrome-corner-font-size);
+  letter-spacing: 0.05em;
+  line-height: 1.65;
+  white-space: nowrap;
+}
+
+.chromeBtnGlyph {
+  display: inline-block;
+  font-size: 0.82em;
+  line-height: 1;
+  vertical-align: 0.04em;
 }
 
 .fullscreenBtn:hover {
@@ -366,15 +378,11 @@
   align-self: end;
   pointer-events: auto;
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(6px, min(1.1vw, 1.6vh), 10px);
   color: #ffe500;
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
-  letter-spacing: 0.05em;
-  line-height: 1.8;
-  white-space: nowrap;
 }
 
 .aboutBtn:hover {
@@ -746,6 +754,7 @@
 @media (max-width: 768px) and (orientation: portrait) {
   .screen {
     --chrome-text-size: clamp(5px, 1.7vw, 8px);
+    --chrome-corner-font-size: clamp(6px, 2vw, 9px);
   }
 
   .content {
@@ -774,7 +783,6 @@
   }
 
   .fullscreenBtn {
-    font-size: clamp(6px, 2vw, 9px);
     padding: 0.45rem 0.2rem;
     min-height: 2.75rem;
     display: flex;
@@ -797,7 +805,6 @@
   }
 
   .aboutBtn {
-    font-size: clamp(6px, 2vw, 9px);
     padding: 0.45rem 0.2rem;
     min-height: 2.75rem;
     display: flex;
@@ -821,6 +828,7 @@
 @media (orientation: landscape) and (max-height: 520px) {
   .screen {
     --chrome-text-size: clamp(5px, min(1.2vw, 2vh), 10px);
+    --chrome-corner-font-size: clamp(7px, min(1.35vw, 2.4vh), 11px);
     --title-floor-line: calc(0.7rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
   }
 
@@ -858,9 +866,8 @@
     bottom: var(--title-floor-line);
   }
 
-  .aboutBtn {
-    font-size: clamp(7px, min(1.35vw, 2.4vh), 11px);
-    line-height: 1.5;
+  .aboutBtn,
+  .fullscreenBtn {
     padding: 0.4rem 0.15rem;
     min-height: 2.5rem;
     display: flex;
@@ -868,11 +875,6 @@
   }
 
   .fullscreenBtn {
-    font-size: clamp(7px, min(1.35vw, 2.4vh), 11px);
-    padding: 0.4rem 0.15rem;
-    min-height: 2.5rem;
-    display: flex;
-    align-items: flex-end;
     justify-content: flex-end;
   }
 
@@ -907,6 +909,7 @@
 @media (orientation: landscape) and (max-height: 420px) {
   .screen {
     --chrome-text-size: clamp(5px, min(1.1vw, 1.9vh), 9px);
+    --chrome-corner-font-size: var(--chrome-text-size);
     --title-floor-line: calc(0.6rem + 1.125rem + 0.45rem + env(safe-area-inset-bottom, 0px));
   }
 
@@ -927,11 +930,6 @@
     margin-top: 0;
     font-size: clamp(0.52rem, 2.5vw, 0.68rem);
     padding: 0.72rem 1.15rem;
-  }
-
-  .aboutBtn,
-  .advisory {
-    font-size: var(--chrome-text-size);
   }
 
   .heart {
