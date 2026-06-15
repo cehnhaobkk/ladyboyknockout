@@ -1623,11 +1623,17 @@ body {
   transform-origin: 50% 100%;
   will-change: left, bottom;
 }
+.fighter:has(.fighter-wrap.is-ko) {
+  overflow: visible;
+}
 .fighter-wrap {
   contain: layout style;
   border: none;
   outline: none;
   background: transparent;
+  overflow: visible;
+}
+.fighter-wrap.is-ko {
   overflow: visible;
 }
 .fighter-shadow {
@@ -2814,6 +2820,10 @@ export default function App() {
       const dur = stateConfig.duration
       meta.until = dur ? nowTs + dur : 0
       meta.locked = nextState === 'KO'
+      if (nextState === 'KO') {
+        if (side === 'player') f.py = 0
+        else f.ey = 0
+      }
       if (side === 'player') setPlayerFighterState(nextState)
       else setEnemyFighterState(nextState)
       return true
@@ -3093,6 +3103,15 @@ export default function App() {
           animRef.current.enemy = { state: 'IDLE', until: 0, locked: false }
           setPlayerFighterState('IDLE')
           setEnemyFighterState('IDLE')
+        }
+        const ground = f.groundBottomPercent || '18%'
+        if (playerWrapRef.current) {
+          playerWrapRef.current.style.left = `${Math.round(f.px)}px`
+          playerWrapRef.current.style.bottom = `calc(${ground} + ${Math.round(f.py)}px)`
+        }
+        if (enemyWrapRef.current) {
+          enemyWrapRef.current.style.left = `${Math.round(f.ex)}px`
+          enemyWrapRef.current.style.bottom = `calc(${ground} + ${Math.round(f.ey)}px)`
         }
         bumpHud()
         rafRef.current = requestAnimationFrame(loop)

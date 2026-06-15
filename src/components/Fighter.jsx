@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react'
 import { getStateConfig } from '../fighter/characterConfig'
 import { useFighterAssets } from '../fighter/useFighterAssets'
-import { getKoGroundOffset, snapPixelHeight, snapPixelWidth } from '../fighter/pixelScale'
+import {
+  getKoSpriteLayout,
+  measureSpriteBounds,
+  snapPixelHeight,
+  snapPixelWidth,
+} from '../fighter/pixelScale'
 
 export default function Fighter({ character, state, flipped, height = 180, hitFlash = false }) {
   const { assets, loaded } = useFighterAssets(character)
   const [displayState, setDisplayState] = useState(state)
-  const [nativeSize, setNativeSize] = useState({ w: 0, h: 0 })
+  const [nativeSize, setNativeSize] = useState({
+    w: 0,
+    h: 0,
+    topPad: 0,
+    bottomPad: 0,
+    bodyH: 0,
+  })
 
   useEffect(() => {
     if (state !== displayState) setDisplayState(state)
@@ -18,10 +29,12 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
   useEffect(() => {
     if (!poseImage) return undefined
     let cancelled = false
+    setNativeSize({ w: 0, h: 0, topPad: 0, bottomPad: 0, bodyH: 0 })
     const img = new Image()
     img.onload = () => {
       if (!cancelled) {
-        setNativeSize({ w: img.naturalWidth, h: img.naturalHeight })
+        const bounds = measureSpriteBounds(img)
+        setNativeSize(bounds)
       }
     }
     img.src = poseImage
@@ -45,7 +58,15 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
 
   const displayHeight = snapPixelHeight(nativeSize.h, height)
   const displayWidth = snapPixelWidth(nativeSize.w, nativeSize.h, displayHeight)
-  const koGroundOffset = isKo ? getKoGroundOffset(character, displayHeight) : 0
+  const koLayout = isKo
+    ? getKoSpriteLayout(
+        character,
+        displayHeight,
+        nativeSize.h || undefined,
+        nativeSize.h ? nativeSize : undefined,
+      )
+    : null
+  const wrapHeight = koLayout?.wrapHeight ?? displayHeight
 
   const koFilter =
     koClass === 'kyle-ko'
@@ -59,22 +80,27 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
   const hitFilter = hitFlash ? 'brightness(8) saturate(0)' : null
   const imgFilter = hitFilter || (koFilter !== 'none' ? koFilter : undefined)
 
-  const wrapTransform = [
-    flipped ? 'scaleX(-1)' : null,
-    koGroundOffset ? `translateY(${koGroundOffset}px)` : null,
-  ]
-    .filter(Boolean)
-    .join(' ')
+  const wrapTransform = flipped ? 'scaleX(-1)' : undefined
+
+  const imgTransform = isKo
+    ? [
+        'translateX(-50%)',
+        koLayout?.imgOffsetY ? `translateY(${koLayout.imgOffsetY}px)` : null,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    : undefined
 
   return (
     <div
-      className="fighter-wrap"
+      className={`fighter-wrap${isKo ? ' is-ko' : ''}`}
       style={{
         position: 'relative',
         width: displayWidth ? `${displayWidth}px` : undefined,
-        height: `${displayHeight}px`,
-        transform: wrapTransform || undefined,
+        height: `${wrapHeight}px`,
+        transform: wrapTransform,
         transformOrigin: 'bottom center',
+        overflow: isKo ? 'visible' : undefined,
       }}
     >
       <div className="fighter-shadow" />
@@ -85,13 +111,17 @@ export default function Fighter({ character, state, flipped, height = 180, hitFl
         className={`fighter-image ${cssClass} ${koClass}`.trim()}
         style={{
           width: displayWidth ? `${displayWidth}px` : 'auto',
-          height: `${displayHeight}px`,
+          height: `${koLayout?.imgHeight ?? displayHeight}px`,
           maxWidth: 'none',
           border: 'none',
           outline: 'none',
           background: 'transparent',
           filter: imgFilter,
           animation: cssAnimation,
+          position: isKo ? 'absolute' : undefined,
+          left: isKo ? '50%' : undefined,
+          bottom: isKo ? 0 : undefined,
+          transform: imgTransform || undefined,
           transformOrigin: 'bottom center',
           transition: hitFlash ? 'filter 0.06s ease' : 'none',
           display: 'block',
