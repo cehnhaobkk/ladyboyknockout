@@ -2857,7 +2857,6 @@ export default function App() {
 
   useEffect(() => {
     preloadAllFighterAssets()
-    void preloadFightSfx()
   }, [])
 
   useEffect(() => {
@@ -2865,7 +2864,11 @@ export default function App() {
   }, [fightMusicMuted])
 
   useEffect(() => {
-    const unlock = () => { void unlockFightSfx() }
+    const unlock = () => {
+      void unlockFightSfx().then((ready) => {
+        if (ready) void preloadFightSfx()
+      })
+    }
     window.addEventListener('pointerdown', unlock)
     window.addEventListener('keydown', unlock)
     return () => {
