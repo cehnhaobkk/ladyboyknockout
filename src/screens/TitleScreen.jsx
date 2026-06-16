@@ -5,6 +5,8 @@ import { useArcadeTypewriter } from '../hooks/useArcadeTypewriter.js'
 import { OPPONENT_COUNT } from '../fighter/characterConfig.js'
 import { isIOS, isStandaloneMode, requestAppFullscreen } from '../utils/fullscreen.js'
 
+const CONTACT_EMAIL = 'sawadeeka@ladyboyknockout.com'
+
 const MARQUEE_TEXT =
   '⚠️ SIDE EFFECTS: BLACK EYES · BRUISED EGOS · UNEXPECTED LIFE CHOICES' +
   '\u00a0·\u00a0 NOT RESPONSIBLE FOR IDENTITY CRISES TRIGGERED DURING GAMEPLAY' +
@@ -79,6 +81,11 @@ export default function TitleScreen({ onStart }) {
     const entered = await requestAppFullscreen()
     if (!entered) openFullscreenGuide()
   }, [openFullscreenGuide])
+
+  const handleContactEmail = useCallback((e) => {
+    e.stopPropagation()
+    window.location.href = `mailto:${CONTACT_EMAIL}`
+  }, [])
 
   return (
     <div className={styles.screen}>
@@ -226,8 +233,12 @@ export default function TitleScreen({ onStart }) {
               rounds.
             </p>
             <div className={styles.contactBlock}>
-              <a className={styles.contactLink} href="mailto:sawadeeka@ladyboyknockout.com">
-                sawadeeka@ladyboyknockout.com
+              <a
+                className={styles.contactLink}
+                href={`mailto:${CONTACT_EMAIL}`}
+                onClick={handleContactEmail}
+              >
+                {CONTACT_EMAIL}
               </a>
             </div>
 

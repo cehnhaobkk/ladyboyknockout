@@ -7,7 +7,7 @@ import {
   getKoSpriteLayout,
   measureSpriteBounds,
   preloadSpriteBounds,
-  shouldUseKoSpriteLayout,
+  shouldUseKoDownLayout,
   spriteBoundsCache,
 } from '../fighter/pixelScale'
 
@@ -35,14 +35,14 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
   const pose = config.pose
   const bodyTargetHeight = getFighterBodyTargetHeight(character, height)
   const layoutPose = isKo ? 'lose' : pose
-  const useKoLayout = shouldUseKoSpriteLayout(
+  const useDownLayout = shouldUseKoDownLayout(
     layoutPose,
     poseBounds,
     standbyBounds,
     bodyTargetHeight,
     character,
+    isKo,
   )
-  const useDownLayout = isKo || useKoLayout
 
   useLayoutEffect(() => {
     if (!poseImage) return
@@ -144,7 +144,11 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
   const hitFilter = hitFlash ? 'brightness(8) saturate(0)' : null
   const imgFilter = hitFilter || (koFilter !== 'none' ? koFilter : undefined)
 
-  const wrapTransform = flipped ? 'scaleX(-1)' : undefined
+  const wrapTransform = useDownLayout
+    ? 'scaleX(-1)'
+    : flipped
+      ? 'scaleX(-1)'
+      : undefined
 
   const downStageWidth = spriteLayout?.wrapWidth
   const downStageHeight = spriteLayout?.wrapHeight ?? imgHeight

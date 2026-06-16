@@ -365,6 +365,13 @@ export function shouldUseKoSpriteLayout(pose, bounds, standingBounds, targetBody
   return widthScale < heightScale && canvasAspect >= 1.35
 }
 
+/** Floor layout for lying KO sprites; upright stagger poses keep standing scale. */
+export function shouldUseKoDownLayout(pose, bounds, standingBounds, targetBodyHeight, characterId, isKo) {
+  if (shouldUseKoSpriteLayout(pose, bounds, standingBounds, targetBodyHeight, characterId)) return true
+  if (isKo && bounds?.w && bounds?.h && !isUprightStaggerSprite(bounds)) return true
+  return false
+}
+
 function capSpriteToFootprint(imgHeight, displayWidth, footprint) {
   if (!footprint || !displayWidth) return { imgHeight, displayWidth }
   const shrink = Math.min(
@@ -522,6 +529,7 @@ export function getKoSpriteLayout(
     displayWidth,
     imgOffsetY: 0,
     overflowVisible: isHorizontalDown,
+    isHorizontalDown,
   }
 }
 
