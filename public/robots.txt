@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ladyboyknockout.xyz/sitemap.xml
+Sitemap: https://ladyboyknockout.com/sitemap.xml

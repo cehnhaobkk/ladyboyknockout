@@ -18,6 +18,7 @@ const WELCOME_LINES = [
   'Welcome to Ladyboy Knockout.',
   `Challenge ${OPPONENT_COUNT} fearless warriors before your cocktails run low.`,
   'Read ABOUT THE GAME before you tap start.',
+  'Best played on mobile, teerak.',
   'Now have fun, teerak!',
 ]
 
@@ -225,8 +226,8 @@ export default function TitleScreen({ onStart }) {
               rounds.
             </p>
             <div className={styles.contactBlock}>
-              <a className={styles.contactLink} href="mailto:sawadeeka@ladyboyknockout.xyz">
-                sawadeeka@ladyboyknockout.xyz
+              <a className={styles.contactLink} href="mailto:sawadeeka@ladyboyknockout.com">
+                sawadeeka@ladyboyknockout.com
               </a>
             </div>
 

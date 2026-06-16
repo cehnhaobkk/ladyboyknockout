@@ -27,21 +27,15 @@ function SpeakerMutedIcon() {
   )
 }
 
-export default function FightMusicToggle({ muted, onToggle, hasMusic }) {
+export default function FightMusicToggle({ muted, onToggle }) {
   return (
     <button
       type="button"
-      className={`fight-music-toggle ${muted ? 'is-muted' : ''} ${hasMusic ? '' : 'is-unavailable'}`}
+      className={`fight-music-toggle ${muted ? 'is-muted' : ''}`}
       onClick={onToggle}
-      aria-label={muted ? 'Turn fight music on' : 'Turn fight music off'}
+      aria-label={muted ? 'Unmute fight audio' : 'Mute fight audio'}
       aria-pressed={muted}
-      title={
-        hasMusic
-          ? muted
-            ? 'Turn music on'
-            : 'Turn music off'
-          : 'Add public/audio/fight-music.mp3 to enable music'
-      }
+      title={muted ? 'Turn sound on' : 'Turn sound off'}
     >
       {muted ? <SpeakerMutedIcon /> : <SpeakerOnIcon />}
     </button>

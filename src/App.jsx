@@ -14,6 +14,13 @@ import { GameSystemsManager, ROUND_TIME, ROUND_PHASE, FIGHT_START_POSITIONS } fr
 import useMobileLandscape from './hooks/useMobileLandscape'
 import useFightMusic from './hooks/useFightMusic'
 import {
+  getAttackSfxName,
+  playFightSfx,
+  preloadFightSfx,
+  setFightSfxMuted,
+  unlockFightSfx,
+} from './audio/fightSfx'
+import {
   getCharSelectPortraitScale,
   getFighterVisualScale,
   UNIFIED_FIGHTER_HEIGHT_RATIO,
@@ -30,6 +37,7 @@ const PLAYER = {
   special: 'SOM TAM SLAM 🌶️',
   specialTagline: 'Extra spicy, no warning',
   img: '/characters/nong_nut.png',
+  mobHeadshot: '/characters/headshots/nong_nut.png',
 }
 
 const ENEMIES = [
@@ -113,6 +121,7 @@ const ENEMIES = [
     atk: 18,
     special: 'Durian Bomb 🦨',
     taunt: 'Her mango is sweet. Her temper is not!',
+    winMessage: '25 baht.\nYou fight or you buy',
     img: '/characters/malee.png',
     mobHeadshot: '/characters/headshots/malee.png',
     color: '#2d6a4f',
@@ -125,6 +134,7 @@ const ENEMIES = [
     atk: 16,
     special: 'Sash Slam 👑',
     taunt: 'Sawadee ka! Sui makmak naka!',
+    winMessage: 'I have three jobs,\ntwo pageant titles, and zero time for this. Goodbye.',
     img: '/characters/petch.png',
     mobHeadshot: '/characters/headshots/petch.png',
     color: '#e91e8c',
@@ -193,11 +203,15 @@ function getGameOverPose(fighterId, won) {
 }
 
 function getFighterWinDescription(fighter) {
-  return fighter.taunt || fighter.tagline || ''
+  return fighter.winMessage || fighter.taunt || fighter.tagline || ''
 }
 
 function getFighterWinTitle(fighter) {
   return `${fighter.name} wins!`
+}
+
+function getFighterPortrait(fighter) {
+  return fighter.mobHeadshot || fighter.img
 }
 
 function getScoreLabel(score) {
@@ -316,6 +330,7 @@ const STAGES = [
 ]
 
 PLAYER.img = publicUrl(PLAYER.img)
+PLAYER.mobHeadshot = publicUrl(PLAYER.mobHeadshot)
 ENEMIES.forEach((enemy) => {
   enemy.img = publicUrl(enemy.img)
   enemy.mobHeadshot = publicUrl(enemy.mobHeadshot)
@@ -436,6 +451,8 @@ function scheduleAttack(f, side, characterId, attackState, now) {
       characterId,
     }
   }
+  const sfxName = getAttackSfxName(attackState)
+  if (sfxName) playFightSfx(sfxName, { fighterId: characterId })
   return duration
 }
 
@@ -1636,7 +1653,9 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center center;
+  background: rgba(0, 0, 0, 0.85);
   flex-shrink: 0;
   border: 2px solid var(--neon-pink);
   image-rendering: pixelated;
@@ -2273,6 +2292,7 @@ body {
   font-style: italic;
   max-width: 600px;
   margin: 0 auto 16px;
+  white-space: pre-line;
 }
 .go-message-lose {
   font-size: 9px;
@@ -2756,7 +2776,7 @@ export default function App() {
 
   const isMobileLandscape = useMobileLandscape()
   const fightMusicActive = screen === 'fight'
-  const { muted: fightMusicMuted, toggleMute: toggleFightMusic, hasMusic: fightMusicHasTrack } =
+  const { muted: fightMusicMuted, toggleMute: toggleFightMusic } =
     useFightMusic(fightMusicActive)
   const fightRef = useRef(null)
   const fateTimerRef = useRef(null)
@@ -2837,6 +2857,21 @@ export default function App() {
 
   useEffect(() => {
     preloadAllFighterAssets()
+    void preloadFightSfx()
+  }, [])
+
+  useEffect(() => {
+    setFightSfxMuted(fightMusicMuted)
+  }, [fightMusicMuted])
+
+  useEffect(() => {
+    const unlock = () => { void unlockFightSfx() }
+    window.addEventListener('pointerdown', unlock)
+    window.addEventListener('keydown', unlock)
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
   }, [])
 
   useEffect(
@@ -3016,6 +3051,7 @@ export default function App() {
   }
 
   const goCharSelect = () => {
+    void unlockFightSfx()
     clearFateRoll()
     clearMobileAdvance()
     fightRef.current = null
@@ -3132,8 +3168,8 @@ export default function App() {
 
     const keysDown = () => keysRef.current
     const pressedDown = () => pressRef.current
-    const playSound = (name) => {
-      void name
+    const playSound = (name, opts = {}) => {
+      playFightSfx(name, opts)
     }
 
     const canInterruptState = (meta, nowTs) => {
@@ -3299,6 +3335,10 @@ export default function App() {
             announceEnemyWin()
             setFighterState('player', 'KO', true)
           }
+          playSound('ko', {
+          winnerFighterId: fr.playerId,
+          victimFighterId: fr.enemyId,
+        })
           sys.onKO(winner)
           sys.onRoundEnd(winner, 'timeout', f, performance.now())
         }
@@ -3359,6 +3399,10 @@ export default function App() {
         })
         fr.ehp = Math.max(0, fr.ehp - raw * BLOCK_CHIP_RATIO)
         setFighterState('enemy', 'DODGE', true)
+        playSound('block', {
+          attackerFighterId: fr.playerId,
+          victimFighterId: fr.enemyId,
+        })
         bumpHud()
         return
       }
@@ -3384,13 +3428,22 @@ export default function App() {
       flashFighter('enemy')
       addDamageNumber(fr.ex + 30, fr.arenaH * 0.42, dmg, '#ff6')
       addHitSpark(fr.ex + 70, fr.arenaH * 0.45)
-      playSound('hit')
+      playSound('hit', {
+        type,
+        isSuper,
+        attackerFighterId: fr.playerId,
+        victimFighterId: fr.enemyId,
+      })
       updateFightHudDom(fr)
       if (fr.ehp <= 0) {
         sys.onHit({
           attacker: 'player', defender: 'enemy', damage: 0, attackType: type,
           isKO: true, x: hitX, y: hitY, now, fightState: fr,
           defenderMaxHp: fr.emax, defenderHp: 0, defenderHpAfter: 0,
+        })
+        playSound('ko', {
+          winnerFighterId: fr.playerId,
+          victimFighterId: fr.enemyId,
         })
         fr.roundWinnerSide = 'player'
         clearDamageNumbers()
@@ -3427,6 +3480,10 @@ export default function App() {
           defenderMaxHp: fr.pmax, defenderHp: fr.php, defenderHpAfter: fr.php,
         })
         fr.php = Math.max(0, fr.php - raw * BLOCK_CHIP_RATIO)
+        playSound('block', {
+          attackerFighterId: fr.enemyId,
+          victimFighterId: fr.playerId,
+        })
         bumpHud()
         return
       }
@@ -3452,13 +3509,22 @@ export default function App() {
       flashFighter('player')
       addDamageNumber(fr.px + 20, fr.arenaH * 0.42, dmg, '#f88')
       addHitSpark(fr.px + 70, fr.arenaH * 0.45)
-      playSound('hit')
+      playSound('hit', {
+        type,
+        isSuper,
+        attackerFighterId: fr.enemyId,
+        victimFighterId: fr.playerId,
+      })
       updateFightHudDom(fr)
       if (fr.php <= 0) {
         sys.onHit({
           attacker: 'enemy', defender: 'player', damage: 0, attackType: type,
           isKO: true, x: hitX, y: hitY, now, fightState: fr,
           defenderMaxHp: fr.pmax, defenderHp: 0, defenderHpAfter: 0,
+        })
+        playSound('ko', {
+          winnerFighterId: fr.enemyId,
+          victimFighterId: fr.playerId,
         })
         fr.roundWinnerSide = 'enemy'
         clearDamageNumbers()
@@ -3499,6 +3565,9 @@ export default function App() {
         sys.tick(now, f, scaledDt)
         if (f._lastRoundPhase !== sys.rounds.phase) {
           const phase = sys.rounds.phase
+          if (phase === ROUND_PHASE.FIGHT_ANNOUNCE) {
+            playSound('fight')
+          }
           if (
             !f.matchOver
             && (
@@ -3510,6 +3579,14 @@ export default function App() {
             resetFightersStanding()
           }
           f._lastRoundPhase = phase
+          f._lastCountdownSfx = null
+        }
+        if (sys.rounds.phase === ROUND_PHASE.COUNTDOWN) {
+          const step = sys.rounds.countdownValue
+          if (f._lastCountdownSfx !== step) {
+            f._lastCountdownSfx = step
+            playSound('countdown', { value: step })
+          }
         }
         syncFightHud(now, sys)
         sys.pushback.tick(f, playerSpriteW(), enemySpriteW(), scaledDt)
@@ -3614,6 +3691,7 @@ export default function App() {
         if (pressed.has('KeyT') && sys?.taunts.canTaunt('player', now, f.playerAttackLock)) {
           if (setFighterState('player', 'TAUNT')) {
             sys.taunts.startTaunt('player', now)
+            playSound('taunt', { fighterId: fr.playerId })
           }
         }
         if (pressed.has('ArrowUp') && onGroundP) {
@@ -3752,7 +3830,10 @@ export default function App() {
         }
 
         if (aiDecision.action === 'taunt' && sys.taunts.canTaunt('enemy', now, f.enemyAttackLock)) {
-          if (setFighterState('enemy', 'TAUNT')) sys.taunts.startTaunt('enemy', now)
+          if (setFighterState('enemy', 'TAUNT')) {
+            sys.taunts.startTaunt('enemy', now)
+            playSound('taunt', { fighterId: fr.enemyId })
+          }
         } else if (aiDecision.action === 'super' && sys.superMeter.canActivate('enemy')) {
           const superResult = sys.trySuper('enemy', f.emax, now)
           if (superResult.activated && setFighterState('enemy', 'SUPER')) {
@@ -4223,7 +4304,6 @@ export default function App() {
           <FightMusicToggle
             muted={fightMusicMuted}
             onToggle={toggleFightMusic}
-            hasMusic={fightMusicHasTrack}
           />
           <div className="fight-hud">
             <div className="hud-side">
@@ -4231,7 +4311,7 @@ export default function App() {
               <div className="hud-bar-row">
                 <img
                   className="hud-portrait"
-                  src={playerDef.img}
+                  src={getFighterPortrait(playerDef)}
                   alt=""
                   style={{ borderColor: varNeonPink() }}
                 />
@@ -4287,7 +4367,7 @@ export default function App() {
                 </div>
                 <img
                   className="hud-portrait enemy"
-                  src={enemyDef.img}
+                  src={getFighterPortrait(enemyDef)}
                   alt=""
                   style={{ borderColor: enemyDef.color || '#faa' }}
                 />
