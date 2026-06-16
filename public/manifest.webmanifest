@@ -1,11 +1,17 @@
 {
+  "id": "/",
   "name": "Ladyboy Knockout",
   "short_name": "LBKO",
-  "description": "Retro arcade fighter set on the streets of Thailand",
+  "description": "Free retro arcade fighter set in Thailand. Play as Nong Nut and challenge nine rivals across six stages.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "categories": ["games", "entertainment"],
   "icons": [
     {
       "src": "/favicon-32x32.png",
