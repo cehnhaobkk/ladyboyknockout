@@ -1882,6 +1882,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: 10;
+  outline: none;
 }
 .fighter {
   position: absolute;
@@ -2829,6 +2830,12 @@ export default function App() {
   }, [])
 
   const bumpHud = useCallback(() => setHudTick((t) => t + 1), [])
+  const focusFightArena = useCallback(() => {
+    requestAnimationFrame(() => {
+      document.activeElement?.blur?.()
+      arenaRef.current?.focus?.()
+    })
+  }, [])
   const screenRef = useRef(screen)
   screenRef.current = screen
 
@@ -2847,13 +2854,17 @@ export default function App() {
     const ku = (e) => {
       keysRef.current.delete(e.code)
     }
-    window.addEventListener('keydown', kd)
-    window.addEventListener('keyup', ku)
+    window.addEventListener('keydown', kd, true)
+    window.addEventListener('keyup', ku, true)
     return () => {
-      window.removeEventListener('keydown', kd)
-      window.removeEventListener('keyup', ku)
+      window.removeEventListener('keydown', kd, true)
+      window.removeEventListener('keyup', ku, true)
     }
   }, [])
+
+  useEffect(() => {
+    if (screen === 'fight') focusFightArena()
+  }, [screen, focusFightArena])
 
   useEffect(() => {
     preloadAllFighterAssets()
@@ -2960,6 +2971,7 @@ export default function App() {
           initFightSession(enemyId, finalId)
           setScreen('fight')
           bumpHud()
+          focusFightArena()
         }, 200)
         return
       }
@@ -2970,7 +2982,7 @@ export default function App() {
     }
 
     stageFateTimerRef.current = window.setTimeout(runStep, 40)
-  }, [stageFateRolling, bumpHud, initFightSession])
+  }, [stageFateRolling, bumpHud, initFightSession, focusFightArena])
 
   const startFateDecide = useCallback((options = {}) => {
     if (fateRolling || mobileAdvancing) return
@@ -3075,6 +3087,7 @@ export default function App() {
     initFightSession(selectedEnemyId, stageId)
     setScreen('fight')
     bumpHud()
+    focusFightArena()
   }
 
   useEffect(() => {
@@ -3545,7 +3558,7 @@ export default function App() {
     const loop = (now) => {
       const f = fightRef.current
       const sys = systemsRef.current
-      if (!f || screen !== 'fight') return
+      if (!f || screenRef.current !== 'fight') return
 
       if (sys?.shouldFreezeFrame()) {
         const shake = sys.getShakeOffset()
@@ -4411,7 +4424,7 @@ export default function App() {
               arenaRef={arenaRef}
             />
 
-            <div className="fighters" ref={arenaRef}>
+            <div className="fighters" ref={arenaRef} tabIndex={-1} aria-label="Fight arena">
               {fr.damageNumbers.map((d) =>
                 d.spark ? (
                   <div key={d.id} className="hit-spark" style={{ left: d.x, top: d.y }}>
@@ -4470,6 +4483,7 @@ export default function App() {
             setMatchWinner(null)
             setScreen('fight')
             bumpHud()
+            focusFightArena()
           }}
           onNewFight={() => {
             setMatchWinner(null)

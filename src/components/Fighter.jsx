@@ -42,7 +42,7 @@ function Fighter({ character, state, flipped, height = 180, hitFlash = false }) 
     bodyTargetHeight,
     character,
   )
-  const useDownLayout = useKoLayout
+  const useDownLayout = isKo || useKoLayout
 
   useLayoutEffect(() => {
     if (!poseImage) return
