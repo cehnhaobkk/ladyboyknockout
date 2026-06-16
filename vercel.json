@@ -7,19 +7,13 @@
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "ladyboyknockout.xyz" }],
-      "destination": "https://ladyboyknockout.com/:path*",
+      "destination": "https://www.ladyboyknockout.com/:path*",
       "statusCode": 301
     },
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "www.ladyboyknockout.xyz" }],
-      "destination": "https://ladyboyknockout.com/:path*",
-      "statusCode": 301
-    },
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.ladyboyknockout.com" }],
-      "destination": "https://ladyboyknockout.com/:path*",
+      "destination": "https://www.ladyboyknockout.com/:path*",
       "statusCode": 301
     }
   ]
